@@ -3,21 +3,15 @@
 
 #include <BlackJawz.h>
 
-BlackJawz::Engine* engine;
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize the application
-    Application* theApp = new Application();
+    BlackJawz::Engine* engine = new  BlackJawz::Engine();
 
-    if (FAILED(theApp->Initialise(hInstance, nCmdShow)))
-    {
-        delete theApp;
-        return -1;
-    }
+    engine->Setup(hInstance, nCmdShow);
 
     //BlackJawz::Engine engine;
 
@@ -45,9 +39,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         }
 
         // App Code here
+        engine->Run();
     }
 
     // Cleanup
-    delete theApp;
+    engine->Cleanup();
+    delete engine;
     return (int)msg.wParam;
 }

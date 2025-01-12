@@ -1,7 +1,4 @@
-// Application.cpp : Defines the entry point for the application.
-//
-
-#include "framework.h"
+#include "pch.h"
 #include "Application.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -27,18 +24,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-Application::Application()
+BlackJawz::Application::Application::Application()
 {
-	_hInst = nullptr;
 	_hWnd = nullptr;
 }
 
-Application::~Application()
+BlackJawz::Application::Application::~Application()
 {
 
 }
 
-HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
+HRESULT BlackJawz::Application::Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 {
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
@@ -53,7 +49,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	return S_OK;
 }
 
-HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
+HRESULT BlackJawz::Application::Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
 {
 	// Register class
 	WNDCLASSEX wcex;
@@ -73,7 +69,6 @@ HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
 		return E_FAIL;
 
 	// Create window
-	_hInst = hInstance;
 	RECT rc = { 0, 0, _WindowWidth, _WindowHeight };
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	_hWnd = CreateWindow(L"BlackJawz Engine", L"BlackJawz Engine", WS_OVERLAPPEDWINDOW,

@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "Application.h"
 
+// Windows Version
+#define _WIN32_WINNT_WIN10
+
+#include <SDKDDKVer.h>
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;

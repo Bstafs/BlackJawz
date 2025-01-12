@@ -6,7 +6,7 @@
 namespace BlackJawz
 {
 	class Engine
-	{ 
+	{
 	public:
 		Engine();
 		~Engine();

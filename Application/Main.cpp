@@ -13,8 +13,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
     engine->Setup(hInstance, nCmdShow);
 
-    //BlackJawz::Engine engine;
-
     MSG msg = { 0 };
 
     // Main message and game loop

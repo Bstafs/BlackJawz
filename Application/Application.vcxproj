@@ -95,9 +95,6 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Application.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="Application.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
@@ -105,6 +102,9 @@
     <ProjectReference Include="..\BlackJawz\BlackJawz.vcxproj">
       <Project>{1f1b8976-92bd-4a9e-afdd-766919d2aca0}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Application.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

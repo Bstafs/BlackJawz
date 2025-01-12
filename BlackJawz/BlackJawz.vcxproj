@@ -90,7 +90,6 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="BlackJawz.h" />
-    <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>

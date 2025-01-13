@@ -3,13 +3,17 @@
 
 #include <BlackJawz.h>
 
+BlackJawz::Engine* engine;
+
+
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize the application
-    BlackJawz::Engine* engine = new  BlackJawz::Engine();
+    engine = new  BlackJawz::Engine();
 
     engine->Setup(hInstance, nCmdShow);
 
@@ -21,6 +25,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
         // Process all pending messages
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
+
             if (msg.message == WM_QUIT)
             {
                 break; // Exit the loop if the quit message is received

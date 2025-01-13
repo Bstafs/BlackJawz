@@ -10,6 +10,12 @@
     <Filter Include="Engine">
       <UniqueIdentifier>{31aa8a81-97a0-41b7-b973-e9693c54949f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Rendering">
+      <UniqueIdentifier>{dc4106af-5f8d-43d7-a7f1-81a983aefb8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{9af00886-031e-4f55-b168-372b46c713a3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -21,6 +27,10 @@
     <ClInclude Include="BlackJawz.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -32,5 +42,9 @@
     <ClCompile Include="BlackJawz.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor.cpp" />
   </ItemGroup>
 </Project>

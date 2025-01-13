@@ -1,5 +1,7 @@
 #pragma once
 
+
+
 namespace BlackJawz::Application
 {
 	class Application
@@ -9,12 +11,16 @@ namespace BlackJawz::Application
 		~Application();
 
 		HRESULT Initialise(HINSTANCE hInstance, int nCmdShow);
+
+		static HWND GetWindow() { return _hWnd; }
+		static UINT GetWindowWidth() { return _WindowWidth; }
+		static UINT GetWindowHeight() { return _WindowHeight; }
+
 	private:
 		HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow);
 
-		// Initialise + Device
-		HWND                    _hWnd;
-		UINT _WindowWidth = 1920;
-		UINT _WindowHeight = 1080;
+		static HWND _hWnd;
+		static UINT _WindowWidth;
+		static UINT _WindowHeight;
 	};
 }

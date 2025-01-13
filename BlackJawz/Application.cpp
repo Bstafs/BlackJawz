@@ -2,9 +2,12 @@
 #include "Application.h"
 
 // Windows Version
-#define _WIN32_WINNT_WIN10
-
 #include <SDKDDKVer.h>
+
+// Define static members
+HWND BlackJawz::Application::Application::_hWnd = nullptr;
+UINT BlackJawz::Application::Application::_WindowWidth = 1920;
+UINT BlackJawz::Application::Application::_WindowHeight = 1080;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -31,7 +34,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 BlackJawz::Application::Application::Application()
 {
-	_hWnd = nullptr;
+
 }
 
 BlackJawz::Application::Application::~Application()
@@ -66,7 +69,7 @@ HRESULT BlackJawz::Application::Application::InitWindow(HINSTANCE hInstance, int
 	wcex.hInstance = hInstance;
 	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_APPLICATION);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.hbrBackground = CreateSolidBrush(RGB(150, 180, 255));
 	wcex.lpszMenuName = nullptr;
 	wcex.lpszClassName = L"BlackJawz Engine";
 	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_APPLICATION);

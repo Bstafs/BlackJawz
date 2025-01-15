@@ -2,15 +2,13 @@
 
 #include <BlackJawz.h>
 
-BlackJawz::Engine* engine;
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize the application
-    engine = new  BlackJawz::Engine();
+    BlackJawz::Engine* engine = new  BlackJawz::Engine();
 
     engine->Setup(hInstance, nCmdShow);
 

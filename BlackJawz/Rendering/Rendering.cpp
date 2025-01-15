@@ -248,5 +248,5 @@ void BlackJawz::Rendering::Render::Draw()
 
     pImmediateContext->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
 
-    pSwapChain.Get()->Present(0, 0);
+    pSwapChain.Get()->Present(1, 0);
 }

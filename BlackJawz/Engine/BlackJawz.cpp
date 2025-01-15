@@ -6,7 +6,6 @@ BlackJawz::Engine::Engine()
 {
 	// Constructor implementation
 	mWindowsApp = std::make_unique<Application::Application>();
-	mEditor = std::make_unique<Editor::Editor>();
 	mRendering = std::make_unique<Rendering::Render>();
 }
 
@@ -27,7 +26,6 @@ void BlackJawz::Engine::Setup(HINSTANCE hInstance, int nCmdShow)
 void BlackJawz::Engine::Run()
 {
 	// Engine Setup implementation
-	mEditor->UpdateEditor();
 	mRendering->Update();
 	mRendering->Draw();
 }

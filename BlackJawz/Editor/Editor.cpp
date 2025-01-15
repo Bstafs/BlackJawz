@@ -10,7 +10,7 @@ BlackJawz::Editor::Editor::~Editor()
 
 }
 
-void BlackJawz::Editor::Editor::UpdateEditor()
+void BlackJawz::Editor::Editor::UpdateEditor(ID3D11ShaderResourceView* viewPortSRV)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -25,7 +25,7 @@ void BlackJawz::Editor::Editor::UpdateEditor()
 	ContentMenu();
 	Hierarchy();
 	ObjectProperties();
-	ViewPort();
+	ViewPort(viewPortSRV);
 }
 
 void BlackJawz::Editor::Editor::MenuBar()
@@ -96,32 +96,22 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 	ImGui::End();
 }
 
-void BlackJawz::Editor::Editor::ViewPort()
+void BlackJawz::Editor::Editor::ViewPort(ID3D11ShaderResourceView* viewPortSRV)
 {
+	// Push zero padding style for the viewport window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+	// Begin the ImGui viewport window
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+	// Render the scene to the viewport texture
+	ImVec2 vps = ImGui::GetContentRegionAvail();
+	viewPortsize = vps;
 
-	// Check if the viewport size has changed
-	static ImVec2 previousSize = ImVec2(0, 0);
-	if (viewportSize.x != previousSize.x || viewportSize.y != previousSize.y)
-	{
-		previousSize = viewportSize;
 
-		// Resize your render target (DirectX 11 Texture2D and Render Target View)
-		//ResizeRenderTarget((UINT)viewportSize.x, (UINT)viewportSize.y);
-	}
+	// Display the render target texture in the ImGui window
+	ImGui::Image((ImTextureID)viewPortSRV, viewPortsize);
 
-	//RenderGameSceneToTexture();
-
-	 // Get the ImGui texture ID from the DirectX render target
-	//ID3D11ShaderResourceView* srv = GetRenderTargetShaderResourceView();
-	//ImTextureID textureID = (ImTextureID)srv;
-
-	// Display the render target in ImGui
-	//ImGui::Image(textureID, viewportSize);
-
-	ImGui::End();
-	ImGui::PopStyleVar();
+	ImGui::End(); // End the ImGui viewport window
+	ImGui::PopStyleVar(); // Pop the style variable
 }

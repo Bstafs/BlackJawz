@@ -4,6 +4,7 @@ BlackJawz::Rendering::Render::Render()
 {
     _driverType = D3D_DRIVER_TYPE_NULL;
     _featureLevel = D3D_FEATURE_LEVEL_11_0;
+    mEditor = std::make_unique<Editor::Editor>();
 }
 
 BlackJawz::Rendering::Render::~Render()
@@ -97,6 +98,7 @@ HRESULT BlackJawz::Rendering::Render::InitRenderTargetView()
 
     if (FAILED(hr))
         return hr;
+
 
     hr = pID3D11Device.Get()->CreateRenderTargetView(pBackBuffer, nullptr, pRenderTargetView.GetAddressOf());
     pBackBuffer->Release();
@@ -252,22 +254,75 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	return S_OK;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitImGuiViewPortRenderTarget(UINT width, UINT height)
+{
+    HRESULT hr = S_OK;
+
+    // Create a texture for the viewport render target
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = width;
+    textureDesc.Height = height;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    ID3D11Texture2D* pTexture = nullptr;
+    hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, &pTexture);
+    if (FAILED(hr)) return hr;
+
+    // Create a render target view (RTV) for the viewport texture
+    hr = pID3D11Device.Get()->CreateRenderTargetView(pTexture, nullptr, pRenderTargetViewViewport.GetAddressOf());
+    pTexture->Release();
+    if (FAILED(hr)) return hr;
+
+    // Create a shader resource view (SRV) for ImGui
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = textureDesc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    hr = pID3D11Device.Get()->CreateShaderResourceView(pTexture, &srvDesc, pShaderResourceViewViewport.GetAddressOf());
+    if (FAILED(hr)) return hr;
+
+    return hr;
+}
+
 void BlackJawz::Rendering::Render::Update()
 {
 
 }
 
+void  BlackJawz::Rendering::Render::SetView(UINT width, UINT height)
+{
+    pRenderTargetViewViewport.Reset();
+    pShaderResourceViewViewport.Reset();
+    InitImGuiViewPortRenderTarget(width, height);
+}
+
 void BlackJawz::Rendering::Render::Draw()
 {
-    pImmediateContext->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
-
+    // Clear the back buffer
     SetBackGroundColour(0.1f, 0.5f, 1.0f, 1.0f);
+    pImmediateContext->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
     pImmediateContext->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
     pImmediateContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    // Scene Render
 
+
+
+
+    // ViewPort
+    SetView(mEditor->GetViewPortSize().x, mEditor->GetViewPortSize().y);
+    mEditor->UpdateEditor(pShaderResourceViewViewport.Get());
+
+    // ImGui Render
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+    // Present Swap Chain
     pSwapChain.Get()->Present(1, 0);
 }

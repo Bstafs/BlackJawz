@@ -1,7 +1,6 @@
 #pragma once
 #include "../pch.h"
 
-#include "../Editor/Editor.h"
 #include "../Rendering/Rendering.h"
 
 namespace BlackJawz
@@ -18,7 +17,6 @@ namespace BlackJawz
 
 	private:
 		std::unique_ptr<Application::Application> mWindowsApp;
-		std::unique_ptr<Editor::Editor> mEditor;
 		std::unique_ptr<Rendering::Render> mRendering;
 	};
 

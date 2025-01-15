@@ -1,6 +1,6 @@
 #pragma once
-#include "pch.h"
-#include "Application.h"
+#include "../pch.h"
+#include "../Windows/Application.h"
 
 namespace BlackJawz::Application
 {

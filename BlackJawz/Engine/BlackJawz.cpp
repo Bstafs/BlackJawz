@@ -1,7 +1,5 @@
 // BlackJawz.cpp : Defines the functions for the static library.
 //
-
-#include "pch.h"
 #include "BlackJawz.h"
 
 BlackJawz::Engine::Engine()

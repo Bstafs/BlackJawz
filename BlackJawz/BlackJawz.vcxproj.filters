@@ -21,30 +21,34 @@
     <ClInclude Include="pch.h">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="Application.h">
-      <Filter>Windows</Filter>
-    </ClInclude>
-    <ClInclude Include="BlackJawz.h">
+    <ClInclude Include="Engine\BlackJawz.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering.h">
+    <ClInclude Include="Rendering\Rendering.h">
       <Filter>Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor.h" />
+    <ClInclude Include="Windows\Application.h">
+      <Filter>Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\Editor.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="Application.cpp">
-      <Filter>Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="BlackJawz.cpp">
+    <ClCompile Include="Engine\BlackJawz.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering.cpp">
+    <ClCompile Include="Rendering\Rendering.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="Windows\Application.cpp">
+      <Filter>Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Editor.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

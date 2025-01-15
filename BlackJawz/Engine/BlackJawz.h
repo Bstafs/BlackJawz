@@ -1,8 +1,8 @@
 #pragma once
-#include "pch.h"
+#include "../pch.h"
 
-#include "Editor.h"
-#include "Rendering.h"
+#include "../Editor/Editor.h"
+#include "../Rendering/Rendering.h"
 
 namespace BlackJawz
 {

@@ -1,11 +1,8 @@
 #include "framework.h"
-#include "Application.h"
 
 #include <BlackJawz.h>
 
 BlackJawz::Engine* engine;
-
-
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {

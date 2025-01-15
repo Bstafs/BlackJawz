@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "Rendering.h"
 
 BlackJawz::Rendering::Render::Render()

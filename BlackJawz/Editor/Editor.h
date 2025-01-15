@@ -8,5 +8,17 @@ namespace BlackJawz::Editor
 	public:
 		Editor();
 		~Editor();
+
+		void UpdateEditor();
+	private:
+		void MenuBar();
+		void ContentMenu();
+		void Hierarchy();
+		void ObjectProperties();
+		void ViewPort();
+
+
+	private:
+		bool showImGuiDemo = false;
 	};
 }

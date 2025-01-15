@@ -8,7 +8,9 @@ BlackJawz::Rendering::Render::Render()
 
 BlackJawz::Rendering::Render::~Render()
 {
-
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
 }
 
 HRESULT BlackJawz::Rendering::Render::InitDeviceAndSwapChain()
@@ -194,41 +196,56 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
     return hr;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitImGui()
+{
+    HRESULT hr = S_OK;
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags = ImGuiConfigFlags_DockingEnable;
+
+    ImGui_ImplWin32_Init(BlackJawz::Application::Application::GetWindow());
+    ImGui_ImplDX11_Init(pID3D11Device.Get(), pImmediateContext.Get());
+    ImGui::StyleColorsDark();
+
+    return hr;
+}
+
 HRESULT BlackJawz::Rendering::Render::Initialise()
 {
 	if (FAILED(InitDeviceAndSwapChain()))
 	{
-
 		return E_FAIL;
 	}
 
     if (FAILED(InitRenderTargetView()))
     {
-
         return E_FAIL;
     }
 
     if (FAILED(InitViewPort()))
     {
-
         return E_FAIL;
     }
 
     if (FAILED(InitSamplerState()))
     {
-
         return E_FAIL;
     }
 
     if (FAILED(InitDepthStencil()))
     {
-
         return E_FAIL;
     }
 
     if (FAILED(InitRasterizer()))
     {
+        return E_FAIL;
+    }
 
+    if (FAILED(InitImGui()))
+    {
         return E_FAIL;
     }
 
@@ -242,11 +259,15 @@ void BlackJawz::Rendering::Render::Update()
 
 void BlackJawz::Rendering::Render::Draw()
 {
+    pImmediateContext->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
+
     SetBackGroundColour(0.1f, 0.5f, 1.0f, 1.0f);
     pImmediateContext->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
     pImmediateContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    pImmediateContext->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     pSwapChain.Get()->Present(1, 0);
 }

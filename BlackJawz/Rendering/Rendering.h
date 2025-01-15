@@ -29,7 +29,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitSamplerState();
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
-
+		HRESULT InitImGui();
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
 		ComPtr<ID3D11DeviceContext> pImmediateContext;

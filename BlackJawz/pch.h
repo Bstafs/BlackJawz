@@ -26,6 +26,11 @@
 #include <directxmath.h>
 #include <directxcolors.h>
 
+// ImGui
+#include "../BlackJawz/ImGui/imgui.h"
+#include "../BlackJawz/ImGui/imgui_impl_dx11.h"
+#include "../BlackJawz/ImGui/imgui_impl_win32.h"
+
 #endif //PCH_H
 
 using Microsoft::WRL::ComPtr;

@@ -11,8 +11,6 @@ namespace BlackJawz::Editor
 		~Editor();
 
 		void Render(Rendering::Render& renderer);
-
-		ImVec2 GetViewPortSize() { return viewPortsize; }
 	private:
 		void MenuBar();
 		void ContentMenu();
@@ -22,6 +20,5 @@ namespace BlackJawz::Editor
 
 	private:
 		bool showImGuiDemo = false;
-		ImVec2 viewPortsize;
 	};
 }

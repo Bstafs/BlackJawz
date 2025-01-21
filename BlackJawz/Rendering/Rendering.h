@@ -56,13 +56,15 @@ namespace BlackJawz::Rendering
 
 		ComPtr<ID3D11SamplerState> pSamplerLinear;
 
+		// Render Target
 		ComPtr<ID3D11RenderTargetView> pRenderTargetView;
 
-
+		// Render To Texture
 		ComPtr<ID3D11Texture2D> pRenderTexture;
 		ComPtr<ID3D11RenderTargetView> pRenderTargetTextureView;
 	    ComPtr<ID3D11ShaderResourceView> pShaderResourceView;
 
+		// Depth Buffer
 		ComPtr<ID3D11DepthStencilView> pDepthStencilView;
 		ComPtr<ID3D11Texture2D> pDepthStencilBuffer;
 

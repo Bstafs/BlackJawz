@@ -147,7 +147,8 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
 	static ImVec2 lastViewportSize = ImVec2(viewportSize.x, viewportSize.y); // Initial size
-	if (viewportSize.x != lastViewportSize.x || viewportSize.y != lastViewportSize.y) {
+	if (viewportSize.x != lastViewportSize.x || viewportSize.y != lastViewportSize.y) 
+	{
 		renderer.ResizeRenderTarget(static_cast<int>(viewportSize.x), static_cast<int>(viewportSize.y));
 		lastViewportSize = viewportSize;
 	}

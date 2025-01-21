@@ -179,15 +179,15 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 
 HRESULT BlackJawz::Rendering::Render::InitViewPort()
 {
-    //// Setup the viewport
-    //D3D11_VIEWPORT vp;
-    //vp.Width = (FLOAT)BlackJawz::Application::Application::GetWindowWidth();
-    //vp.Height = (FLOAT)BlackJawz::Application::Application::GetWindowHeight();
-    //vp.MinDepth = 0.0f;
-    //vp.MaxDepth = 1.0f;
-    //vp.TopLeftX = 0;
-    //vp.TopLeftY = 0;
-    //pImmediateContext.Get()->RSSetViewports(1, &vp);
+    // Setup the viewport
+    D3D11_VIEWPORT vp;
+    vp.Width = (FLOAT)BlackJawz::Application::Application::GetWindowWidth();
+    vp.Height = (FLOAT)BlackJawz::Application::Application::GetWindowHeight();
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    pImmediateContext.Get()->RSSetViewports(1, &vp);
 
     return S_OK;
 }
@@ -308,9 +308,6 @@ HRESULT BlackJawz::Rendering::Render::InitImGui()
 
 HRESULT BlackJawz::Rendering::Render::Initialise()
 {
-
-
-
 	if (FAILED(InitDeviceAndSwapChain()))
 	{
 		return E_FAIL;
@@ -395,13 +392,13 @@ void BlackJawz::Rendering::Render::BeginFrame()
 
 void BlackJawz::Rendering::Render::Draw()
 {
-      // Scene Render
-    //pImmediateContext->IASetInputLayout(pVertexLayout);
-    //pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    // Scene Render
+    pImmediateContext.Get()->IASetInputLayout(pVertexLayout);
+    pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    //pImmediateContext->VSSetShader(pVertexShader, nullptr, 0);
-    //pImmediateContext->PSSetShader(pPixelShader, nullptr, 0);
-    //pImmediateContext->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+    pImmediateContext.Get()->VSSetShader(pVertexShader, nullptr, 0);
+    pImmediateContext.Get()->PSSetShader(pPixelShader, nullptr, 0);
+    pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 }
 
 void BlackJawz::Rendering::Render::EndFrame()

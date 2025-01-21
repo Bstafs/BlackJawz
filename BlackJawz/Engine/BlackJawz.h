@@ -2,6 +2,7 @@
 #include "../pch.h"
 
 #include "../Rendering/Rendering.h"
+#include "../Editor/Editor.h"
 
 namespace BlackJawz
 {
@@ -18,6 +19,7 @@ namespace BlackJawz
 	private:
 		std::unique_ptr<Application::Application> mWindowsApp;
 		std::unique_ptr<Rendering::Render> mRendering;
+		std::unique_ptr<Editor::Editor> mEditor;
 	};
 
 }

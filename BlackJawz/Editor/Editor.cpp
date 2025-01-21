@@ -7,10 +7,12 @@ BlackJawz::Editor::Editor::Editor()
 
 BlackJawz::Editor::Editor::~Editor()
 {
-
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
-void BlackJawz::Editor::Editor::UpdateEditor(ID3D11ShaderResourceView* viewPortSRV)
+void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -21,11 +23,15 @@ void BlackJawz::Editor::Editor::UpdateEditor(ID3D11ShaderResourceView* viewPortS
 		ImGui::ShowDemoWindow();
 	}
 
+	renderer.BeginFrame();
+
 	MenuBar();
 	ContentMenu();
 	Hierarchy();
 	ObjectProperties();
-	ViewPort(viewPortSRV);
+	ViewPort(renderer);
+
+	renderer.EndFrame();
 }
 
 void BlackJawz::Editor::Editor::MenuBar()
@@ -96,22 +102,21 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 	ImGui::End();
 }
 
-void BlackJawz::Editor::Editor::ViewPort(ID3D11ShaderResourceView* viewPortSRV)
+void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 {
+	renderer.RenderToTexture();
+
 	// Push zero padding style for the viewport window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 	// Begin the ImGui viewport window
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	// Render the scene to the viewport texture
-	ImVec2 vps = ImGui::GetContentRegionAvail();
-	viewPortsize = vps;
-
-
-	// Display the render target texture in the ImGui window
-	ImGui::Image((ImTextureID)viewPortSRV, viewPortsize);
+	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), ImVec2(800, 600));
 
 	ImGui::End(); // End the ImGui viewport window
 	ImGui::PopStyleVar(); // Pop the style variable
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

@@ -25,6 +25,7 @@
 #include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>
+#include "Util/ID3D11Functions.h"
 
 // ImGui
 #include "../BlackJawz/ImGui/imgui.h"

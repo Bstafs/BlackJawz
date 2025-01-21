@@ -1,5 +1,6 @@
 #pragma once
 #include "../pch.h"
+#include "../Rendering/Rendering.h"
 
 namespace BlackJawz::Editor
 {
@@ -9,7 +10,7 @@ namespace BlackJawz::Editor
 		Editor();
 		~Editor();
 
-		void UpdateEditor(ID3D11ShaderResourceView* viewPortSRV);
+		void Render(Rendering::Render& renderer);
 
 		ImVec2 GetViewPortSize() { return viewPortsize; }
 	private:
@@ -17,7 +18,7 @@ namespace BlackJawz::Editor
 		void ContentMenu();
 		void Hierarchy();
 		void ObjectProperties();
-		void ViewPort(ID3D11ShaderResourceView* viewPortSRV);
+		void ViewPort(Rendering::Render& renderer);
 
 	private:
 		bool showImGuiDemo = false;

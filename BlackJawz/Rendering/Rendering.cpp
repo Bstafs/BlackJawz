@@ -116,22 +116,65 @@ HRESULT BlackJawz::Rendering::Render::InitRenderTargetView()
 
      hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pRenderTexture.GetAddressOf());
     if (FAILED(hr)) {
-        return false;
+        return hr;
     }
 
     // Create a render target view for the texture
     hr = pID3D11Device.Get()->CreateRenderTargetView(pRenderTexture.Get(), nullptr, pRenderTargetTextureView.GetAddressOf());
     if (FAILED(hr)) {
-        return false;
+        return hr;
     }
 
     // Create a shader resource view for the texture
     hr = pID3D11Device.Get()->CreateShaderResourceView(pRenderTexture.Get(), nullptr, pShaderResourceView.GetAddressOf());
     if (FAILED(hr)) {
-        return false;
+        return hr;
     }
 
     return hr;
+}
+
+void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
+{
+    if (width == renderWidth && height == renderHeight) 
+    {
+        return;
+    }
+
+    pRenderTargetTextureView.Reset();
+    pRenderTexture.Reset();
+    pShaderResourceView.Reset();
+
+    renderWidth = width;
+    renderHeight = height;
+
+    // Recreate the render target texture
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = renderWidth;
+    textureDesc.Height = renderHeight;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    HRESULT hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pRenderTexture.GetAddressOf());
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to resize render target texture.");
+    }
+
+    // Recreate the render target view
+    hr = pID3D11Device.Get()->CreateRenderTargetView(pRenderTexture.Get(), nullptr, pRenderTargetTextureView.GetAddressOf());
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create render target view.");
+    }
+
+    // Recreate the shader resource view
+    hr = pID3D11Device.Get()->CreateShaderResourceView(pRenderTexture.Get(), nullptr, pShaderResourceView.GetAddressOf());
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create shader resource view.");
+    }
 }
 
 HRESULT BlackJawz::Rendering::Render::InitViewPort()
@@ -320,8 +363,8 @@ void BlackJawz::Rendering::Render::RenderToTexture()
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0.0f;
     viewport.TopLeftY = 0.0f;
-    viewport.Width = BlackJawz::Application::Application::GetWindowWidth(); // Width of the texture
-    viewport.Height = BlackJawz::Application::Application::GetWindowHeight(); // Height of the texture
+    viewport.Width = static_cast<float>(renderWidth);
+    viewport.Height = static_cast<float>(renderHeight);
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     pImmediateContext.Get()->RSSetViewports(1, &viewport);
@@ -330,8 +373,7 @@ void BlackJawz::Rendering::Render::RenderToTexture()
     SetBackGroundColour(0.1f, 0.5f, 1.0f, 1.0f);
     pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetTextureView.Get(), ClearColor);
 
-    // Render your 3D scene here
-    // Example: Draw objects, apply shaders, etc.
+    // Render 3D scene
     Draw();
 
     // Restore the default render target after rendering to texture
@@ -346,8 +388,7 @@ void BlackJawz::Rendering::Render::Update()
 void BlackJawz::Rendering::Render::BeginFrame()
 {
     // Clear the back buffer
-    SetBackGroundColour(0.1f, 0.5f, 1.0f, 1.0f);
-    pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
+    SetBackGroundColour(0.1f, 0.1f, 0.1f, 1.0f);
     pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
     pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
@@ -365,5 +406,8 @@ void BlackJawz::Rendering::Render::Draw()
 
 void BlackJawz::Rendering::Render::EndFrame()
 {
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
     pSwapChain.Get()->Present(1, 0);
 }

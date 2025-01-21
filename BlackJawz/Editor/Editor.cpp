@@ -14,23 +14,57 @@ BlackJawz::Editor::Editor::~Editor()
 
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 {
+	// Begin ImGui frame
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	if (showImGuiDemo)
+	// Create a full-window dockable space
+	static bool dockspaceOpen = true;
+	static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
+
+	// Create a parent window to hold the dockspace
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+	ImGui::SetNextWindowBgAlpha(0.0f); // Transparent background for the parent window
+
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	ImGui::Begin("DockSpace Root", &dockspaceOpen, windowFlags);
+
+	// Create the dockspace
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) 
 	{
+		ImGuiID dockspaceID = ImGui::GetID("MainDockspace");
+		ImGui::DockSpace(dockspaceID, ImVec2(0, 0), dockspaceFlags);
+	}
+	else 
+	{
+		ImGui::Text("Docking is not enabled! Please enable it in ImGui configuration.");
+	}
+	ImGui::End();
+	ImGui::PopStyleVar(); // Pop the style variable
+
+	// Optionally show ImGui demo window
+	if (showImGuiDemo) {
 		ImGui::ShowDemoWindow();
 	}
 
+	// Begin rendering the main content
 	renderer.BeginFrame();
 
-	MenuBar();
-	ContentMenu();
-	Hierarchy();
-	ObjectProperties();
-	ViewPort(renderer);
+	// Render editor components
+	MenuBar();          // Menu at the top
+	ContentMenu();      // Content browser (dockable)
+	Hierarchy();        // Hierarchy window (dockable)
+	ObjectProperties(); // Object properties (dockable)
+	ViewPort(renderer); // Viewport (dockable)
 
+	// End rendering frame
 	renderer.EndFrame();
 }
 
@@ -104,19 +138,24 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 
 void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 {
-	renderer.RenderToTexture();
-
 	// Push zero padding style for the viewport window
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 	// Begin the ImGui viewport window
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), ImVec2(800, 600));
+	ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+	static ImVec2 lastViewportSize = ImVec2(viewportSize.x, viewportSize.y); // Initial size
+	if (viewportSize.x != lastViewportSize.x || viewportSize.y != lastViewportSize.y) {
+		renderer.ResizeRenderTarget(static_cast<int>(viewportSize.x), static_cast<int>(viewportSize.y));
+		lastViewportSize = viewportSize;
+	}
+
+	renderer.RenderToTexture();
+
+	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
 
 	ImGui::End(); // End the ImGui viewport window
 	ImGui::PopStyleVar(); // Pop the style variable
-
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

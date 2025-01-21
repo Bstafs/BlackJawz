@@ -29,7 +29,6 @@ void BlackJawz::Engine::Run()
 	// Engine Setup implementation
 	mEditor->Render(*mRendering);
 	mRendering->Update();
-	//mRendering->Draw();
 }
 
 void BlackJawz::Engine::Cleanup()

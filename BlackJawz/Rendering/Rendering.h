@@ -27,6 +27,7 @@ namespace BlackJawz::Rendering
 
 		void RenderToTexture(); // Render scene to the texture
 		ID3D11ShaderResourceView* GetShaderResourceView() const {return  pShaderResourceView.Get();	} // For ImGui::Image
+		void ResizeRenderTarget(int width, int height);
 
 	private:
 		HRESULT InitDeviceAndSwapChain();
@@ -65,9 +66,12 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11DepthStencilView> pDepthStencilView;
 		ComPtr<ID3D11Texture2D> pDepthStencilBuffer;
 
-		ComPtr<ID3D11DepthStencilState> DSLessEqual;
+		ComPtr<ID3D11DepthStencilState> DSLessEqual;	
 		ComPtr<ID3D11RasterizerState> RSCullNone;
 		ComPtr<ID3D11RasterizerState> CCWcullMode;
 		ComPtr<ID3D11RasterizerState> CWcullMode;
+
+		int renderWidth = BlackJawz::Application::Application::GetWindowWidth();
+		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
 	};
 }

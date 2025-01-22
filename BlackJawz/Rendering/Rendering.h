@@ -8,6 +8,11 @@ namespace BlackJawz::Application
 	class Application;
 }
 
+struct Vertex
+{
+	DirectX::XMFLOAT3 position; // Position of the vertex
+	DirectX::XMFLOAT4 color;    // Color of the vertex
+};
 
 namespace BlackJawz::Rendering
 {
@@ -38,6 +43,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
 		HRESULT InitImGui();
+		HRESULT InitTriangle();
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -47,9 +53,11 @@ namespace BlackJawz::Rendering
 		D3D_DRIVER_TYPE         _driverType;
 		D3D_FEATURE_LEVEL       _featureLevel;
 
-		ID3D11VertexShader* pVertexShader;
-		ID3D11PixelShader* pPixelShader;
-		ID3D11InputLayout* pVertexLayout;
+
+		// Shaders
+		ComPtr<ID3D11VertexShader> pVertexShader;
+		ComPtr<ID3D11PixelShader> pPixelShader;
+		ComPtr<ID3D11InputLayout> pInputLayout;
 
 		UINT mSampleCount = 4;
 		float ClearColor[4] = {};
@@ -75,5 +83,7 @@ namespace BlackJawz::Rendering
 
 		int renderWidth = BlackJawz::Application::Application::GetWindowWidth();
 		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
+
+		ComPtr<ID3D11Buffer> vertexBuffer;
 	};
 }

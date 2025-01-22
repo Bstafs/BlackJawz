@@ -109,7 +109,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shader.hlsl">
+    <FxCompile Include="Rendering\shader.hlsl">
       <Filter>Rendering\Shaders</Filter>
     </FxCompile>
   </ItemGroup>

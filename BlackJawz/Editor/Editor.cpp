@@ -49,8 +49,9 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	ImGui::End();
 	ImGui::PopStyleVar(); // Pop the style variable
 
-	// Optionally show ImGui demo window
-	if (showImGuiDemo) {
+	// ImGui demo window
+	if (showImGuiDemo) 
+	{
 		ImGui::ShowDemoWindow();
 	}
 
@@ -122,9 +123,91 @@ void BlackJawz::Editor::Editor::ContentMenu()
 	ImGui::End();
 }
 
+void BlackJawz::Editor::Editor::CreatePrimitiveObject(const std::string& objectType)
+{
+	// Add the new object to the list
+	objects.push_back(objectType);
+
+	// Optionally, print to console or log for debugging
+	std::cout << "Added a " << objectType << " to the scene.\n";
+}
+
 void BlackJawz::Editor::Editor::Hierarchy()
 {
 	ImGui::Begin("Hierarchy");
+
+	// Static variable to track the selected object
+	static int selectedObject = -1;
+
+	bool objectContextMenuOpened = false; // Tracks if an object-specific context menu is opened
+
+	// Loop through all objects
+	for (size_t i = 0; i < objects.size(); i++)
+	{
+		// Push a unique ID for each object
+		ImGui::PushID(static_cast<int>(i));
+
+		// Display each object in the hierarchy
+		if (ImGui::Selectable(objects[i].c_str(), selectedObject == static_cast<int>(i)))
+		{
+			selectedObject = static_cast<int>(i);
+		}
+
+		// Check if the object is right-clicked and open its context menu
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+		{
+			ImGui::OpenPopup("ObjectContextMenu");
+			objectContextMenuOpened = true; // Mark that an object-specific menu is opened
+		}
+
+		// Object-specific context menu
+		if (ImGui::BeginPopup("ObjectContextMenu"))
+		{
+			if (ImGui::MenuItem("Delete"))
+			{
+				// Remove the object from the list
+				objects.erase(objects.begin() + i);
+
+				// Adjust the selected object index
+				if (selectedObject == static_cast<int>(i))
+					selectedObject = -1; // Deselect if the deleted object was selected
+				else if (selectedObject > static_cast<int>(i))
+					selectedObject--; // Shift selection if needed
+
+				ImGui::CloseCurrentPopup();
+				objectContextMenuOpened = false; // Ensure no lingering state
+			}
+			ImGui::EndPopup();
+		}
+
+		// Pop the unique ID
+		ImGui::PopID();
+	}
+
+	// Prevent the "Add Object" menu from appearing when right-clicking an object
+	if (!objectContextMenuOpened && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		ImGui::OpenPopup("HierarchyContextMenu"); // Open the Add Object menu
+	}
+
+	// Add a right-click context menu for adding new objects
+	if (ImGui::BeginPopup("HierarchyContextMenu"))
+	{
+		if (ImGui::MenuItem("Add Cube"))
+		{
+			CreatePrimitiveObject("Cube");
+		}
+		if (ImGui::MenuItem("Add Sphere"))
+		{
+			CreatePrimitiveObject("Sphere");
+		}
+		if (ImGui::MenuItem("Add Plane"))
+		{
+			CreatePrimitiveObject("Plane");
+		}
+
+		ImGui::EndPopup();
+	}
 
 	ImGui::End();
 }

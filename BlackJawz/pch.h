@@ -15,6 +15,8 @@
 // C++
 #include <iostream>
 #include <memory>
+#include <string>
+#include <vector>
 
 // Windows
 #include <windows.h>

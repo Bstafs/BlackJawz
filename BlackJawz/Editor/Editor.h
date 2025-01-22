@@ -17,7 +17,6 @@ namespace BlackJawz::Editor
 		void Hierarchy();
 		void ObjectProperties();
 		void ViewPort(Rendering::Render& renderer);
-		void CreatePrimitiveObject(const std::string& objectType);
 	private:
 		bool showImGuiDemo = false;
 		std::vector<std::string> objects;

@@ -18,7 +18,7 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-
+	
 	// Create a full-window dockable space
 	static bool dockspaceOpen = true;
 	static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
@@ -75,7 +75,7 @@ void BlackJawz::Editor::Editor::MenuBar()
 	{
 		if (ImGui::BeginMenu("Main Menu"))
 		{
-			if (ImGui::MenuItem("New Project"))
+			if (ImGui::MenuItem("Create New Project"))
 			{
 
 			}
@@ -123,22 +123,13 @@ void BlackJawz::Editor::Editor::ContentMenu()
 	ImGui::End();
 }
 
-void BlackJawz::Editor::Editor::CreatePrimitiveObject(const std::string& objectType)
-{
-	// Add the new object to the list
-	objects.push_back(objectType);
-
-	// Optionally, print to console or log for debugging
-	std::cout << "Added a " << objectType << " to the scene.\n";
-}
-
 void BlackJawz::Editor::Editor::Hierarchy()
 {
 	ImGui::Begin("Hierarchy");
 
-	// Static variable to track the selected object
+	// Track the selected object
 	static int selectedObject = -1;
-	static bool isRenaming = false; // Flag to track if we are in renaming mode
+	static bool isRenaming = false; // Flag to track  renaming mode
 	static char renameBuffer[128] = ""; // Buffer to store the name while renaming
 	bool objectContextMenuOpened = false; // Tracks if an object-specific context menu is opened
 
@@ -209,6 +200,8 @@ void BlackJawz::Editor::Editor::Hierarchy()
 				// Remove the object from the list
 				objects.erase(objects.begin() + i);
 
+				// Delete Object Code Here Later
+
 				// Adjust the selected object index
 				if (selectedObject == static_cast<int>(i))
 					selectedObject = -1; // Deselect if the deleted object was selected
@@ -237,15 +230,15 @@ void BlackJawz::Editor::Editor::Hierarchy()
 	{
 		if (ImGui::MenuItem("Add Cube"))
 		{
-			CreatePrimitiveObject("Cube");
+			objects.push_back(static_cast<std::string>("Cube"));
 		}
 		if (ImGui::MenuItem("Add Sphere"))
 		{
-			CreatePrimitiveObject("Sphere");
+			objects.push_back(static_cast<std::string>("Sphere"));
 		}
 		if (ImGui::MenuItem("Add Plane"))
 		{
-			CreatePrimitiveObject("Plane");
+			objects.push_back(static_cast<std::string>("Plane"));
 		}
 
 		ImGui::EndPopup();

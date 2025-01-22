@@ -138,7 +138,8 @@ void BlackJawz::Editor::Editor::Hierarchy()
 
 	// Static variable to track the selected object
 	static int selectedObject = -1;
-
+	static bool isRenaming = false; // Flag to track if we are in renaming mode
+	static char renameBuffer[128] = ""; // Buffer to store the name while renaming
 	bool objectContextMenuOpened = false; // Tracks if an object-specific context menu is opened
 
 	// Loop through all objects
@@ -148,9 +149,39 @@ void BlackJawz::Editor::Editor::Hierarchy()
 		ImGui::PushID(static_cast<int>(i));
 
 		// Display each object in the hierarchy
-		if (ImGui::Selectable(objects[i].c_str(), selectedObject == static_cast<int>(i)))
+		bool isSelected = selectedObject == static_cast<int>(i);
+		if (ImGui::Selectable(objects[i].c_str(), isSelected))
 		{
 			selectedObject = static_cast<int>(i);
+		}
+
+		// Handle double-click to start renaming
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !isRenaming)
+		{
+			// Enter renaming mode
+			isRenaming = true;
+			strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].c_str(), _TRUNCATE); // Copy current name
+			selectedObject = static_cast<int>(i); // Keep track of which object is being renamed
+		}
+
+		// Handle renaming input inline
+		if (isRenaming && selectedObject == static_cast<int>(i))
+		{
+			ImGui::SetKeyboardFocusHere(); // Focus on the rename input
+
+			// Create an input field for the object name to be edited inline
+			if (ImGui::InputText("##Rename", renameBuffer, sizeof(renameBuffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+			{
+				// When Enter is pressed, update the name and exit renaming mode
+				objects[i] = renameBuffer;
+				isRenaming = false; // Exit renaming mode
+			}
+
+			// Optional: If Escape is pressed, cancel renaming and revert name
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+			{
+				isRenaming = false; // Cancel renaming and keep the old name
+			}
 		}
 
 		// Check if the object is right-clicked and open its context menu
@@ -163,6 +194,16 @@ void BlackJawz::Editor::Editor::Hierarchy()
 		// Object-specific context menu
 		if (ImGui::BeginPopup("ObjectContextMenu"))
 		{
+			if (ImGui::MenuItem("Rename"))
+			{
+				// Set renaming mode if the "Rename" option is selected
+				strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].c_str(), _TRUNCATE); // Copy current name
+				isRenaming = true; // Set renaming mode
+				selectedObject = static_cast<int>(i); // Track the selected object
+				ImGui::CloseCurrentPopup();
+				objectContextMenuOpened = false; // Ensure no lingering state
+			}
+
 			if (ImGui::MenuItem("Delete"))
 			{
 				// Remove the object from the list
@@ -177,6 +218,7 @@ void BlackJawz::Editor::Editor::Hierarchy()
 				ImGui::CloseCurrentPopup();
 				objectContextMenuOpened = false; // Ensure no lingering state
 			}
+
 			ImGui::EndPopup();
 		}
 

@@ -231,7 +231,7 @@ HRESULT BlackJawz::Rendering::Render::InitShadersAndInputLayout()
 	}
 
 	// Define the input layout
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[] = 
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -269,6 +269,8 @@ HRESULT BlackJawz::Rendering::Render::InitSamplerState()
 HRESULT BlackJawz::Rendering::Render::InitDepthStencil()
 {
 	// Depth Stencil 
+
+	HRESULT hr = S_OK;
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
 
 	depthStencilDesc.Width = BlackJawz::Application::Application::GetWindowWidth();
@@ -286,7 +288,22 @@ HRESULT BlackJawz::Rendering::Render::InitDepthStencil()
 	pID3D11Device.Get()->CreateTexture2D(&depthStencilDesc, nullptr, pDepthStencilBuffer.GetAddressOf());
 	pID3D11Device.Get()->CreateDepthStencilView(pDepthStencilBuffer.Get(), nullptr, pDepthStencilView.GetAddressOf());
 
-	return S_OK;
+	D3D11_DEPTH_STENCIL_DESC dssDesc = {};
+	dssDesc.DepthEnable = true; // Disable depth testing for a simple triangle
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	ComPtr<ID3D11DepthStencilState> depthStencilState;
+	hr = pID3D11Device->CreateDepthStencilState(&dssDesc, depthStencilState.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugStringA("Failed to create depth-stencil state.\n");
+		return hr;
+	}
+
+	pImmediateContext.Get()->OMSetDepthStencilState(depthStencilState.Get(), 1);
+
+	return hr;
 }
 
 HRESULT BlackJawz::Rendering::Render::InitRasterizer()
@@ -338,13 +355,33 @@ HRESULT BlackJawz::Rendering::Render::InitImGui()
 	return hr;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitConstantBuffer()
+{
+	HRESULT hr = S_OK;
 
+	D3D11_BUFFER_DESC bufferDesc = {};
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = sizeof(ConstantBuffer);
+	bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bufferDesc.CPUAccessFlags = 0;
+	bufferDesc.MiscFlags = 0;
+	bufferDesc.StructureByteStride = 0;
+
+	hr = pID3D11Device.Get()->CreateBuffer(&bufferDesc, nullptr, pConstantBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugStringA("Failed to create constant buffer.\n");
+		return hr;
+	}
+
+	return hr;
+}
 
 HRESULT BlackJawz::Rendering::Render::InitTriangle()
 {
 	HRESULT hr = S_OK;
 
-	// Define vertices for a colored triangle
+	// Define vertices for the square (two triangles sharing middle vertices)
 	Vertex vertices[] =
 	{
 		{ { 0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }, // Top vertex (red)
@@ -365,12 +402,66 @@ HRESULT BlackJawz::Rendering::Render::InitTriangle()
 	vertexData.pSysMem = vertices;                              // Pointer to the vertex data
 
 	// Create the vertex buffer
-	hr = pID3D11Device->CreateBuffer(&vertexBufferDesc, &vertexData, vertexBuffer.GetAddressOf());
+	hr = pID3D11Device.Get()->CreateBuffer(&vertexBufferDesc, &vertexData, vertexBuffer.GetAddressOf());
 	if (FAILED(hr))
 	{
 		OutputDebugStringA("Failed to create vertex buffer.\n");
 		return hr; // Return the HRESULT if buffer creation fails
 	}
+
+	return hr; // Return S_OK if everything succeeded
+}
+
+HRESULT BlackJawz::Rendering::Render::InitCube()
+{
+	HRESULT hr = S_OK;
+
+	// Create vertex buffer
+	Vertex vertices[] =
+	{
+	{ XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+	{ XMFLOAT3(1.0f, -1.0f,  1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+	{ XMFLOAT3(1.0f,  1.0f,  1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+	{ XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
+
+	// Back face
+	{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
+	{ XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) },
+	{ XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
+	{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) },
+	};
+
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(Vertex) * 8;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData = {};
+	InitData.pSysMem = vertices;
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pCubeVertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	// Create index buffer
+	WORD indices[] =
+	{
+	0, 1, 2, 0, 2, 3,  // Front face
+	4, 5, 6, 4, 6, 7,  // Back face
+	0, 1, 5, 0, 5, 4,  // Left face
+	2, 3, 7, 2, 7, 6,  // Right face
+	3, 0, 4, 3, 4, 7,  // Top face
+	1, 2, 6, 1, 6, 5   // Bottom face
+	};
+
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(WORD) * 36;
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	InitData.pSysMem = indices;
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pCubeIndexBuffer.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
 
 	return hr; // Return S_OK if everything succeeded
 }
@@ -417,7 +508,17 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
+	if (FAILED(InitConstantBuffer()))
+	{
+		return E_FAIL;
+	}
+
 	if (FAILED(InitTriangle()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitCube()))
 	{
 		return E_FAIL;
 	}
@@ -459,7 +560,7 @@ void BlackJawz::Rendering::Render::Update()
 void BlackJawz::Rendering::Render::BeginFrame()
 {
 	// Clear the back buffer
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
+	//pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
 	SetBackGroundColour(0.1f, 0.1f, 0.1f, 1.0f);
 	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
 	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -474,13 +575,28 @@ void BlackJawz::Rendering::Render::Draw()
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	pImmediateContext.Get()->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+	// pImmediateContext.Get()->IASetVertexBuffers(0, 1, pCubeVertexBuffer.GetAddressOf(), &stride, &offset);
+    // pImmediateContext.Get()->IASetIndexBuffer(pCubeIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
 	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 
 	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
+	ConstantBuffer cb = {};
+
+	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
+	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
+
+	cb.World = XMMatrixTranspose(XMMatrixIdentity());
+	cb.View = XMMatrixTranspose(view);
+	cb.Projection = XMMatrixTranspose(projection);
+
+	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
 	pImmediateContext.Get()->Draw(3, 0);
+	//pImmediateContext.Get()->DrawIndexed(36, 0, 0);
 }
 
 void BlackJawz::Rendering::Render::EndFrame()
@@ -489,4 +605,11 @@ void BlackJawz::Rendering::Render::EndFrame()
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	pSwapChain.Get()->Present(1, 0);
+}
+
+void BlackJawz::Rendering::Render::CleanUp()
+{
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }

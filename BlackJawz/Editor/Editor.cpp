@@ -2,14 +2,16 @@
 
 BlackJawz::Editor::Editor::Editor()
 {
-
+	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
+		XMConvertToRadians(60.0f),
+		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
+		0.1f, 1000.0f
+	);
 }
 
 BlackJawz::Editor::Editor::~Editor()
 {
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+
 }
 
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
@@ -249,7 +251,15 @@ void BlackJawz::Editor::Editor::Hierarchy()
 
 void BlackJawz::Editor::Editor::ObjectProperties()
 {
-	ImGui::Begin("ObjectProperties");
+	ImGui::Begin("Object Properties");
+
+	float posX = editorCamera->GetPosition().z;
+	float pitch = editorCamera->GetPitch();
+	float yaw = editorCamera->GetYaw();
+
+	ImGui::DragFloat("Camera Pos X", &posX, 0.01f);
+	ImGui::DragFloat("Camera Pitch", &pitch, 0.01f);
+	ImGui::DragFloat("Camera Yaw", &yaw, 0.01f);
 
 	ImGui::End();
 }
@@ -268,8 +278,31 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	if (viewportSize.x != lastViewportSize.x || viewportSize.y != lastViewportSize.y) 
 	{
 		renderer.ResizeRenderTarget(static_cast<int>(viewportSize.x), static_cast<int>(viewportSize.y));
+		editorCamera->SetAspectRatio(viewportSize.x / viewportSize.y);
 		lastViewportSize = viewportSize;
 	}
+
+	// Handle camera input (example for WASD and mouse movement)
+	if (ImGui::IsWindowFocused())
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		float deltaTime = io.DeltaTime;
+
+		// Mouse rotation
+		if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+		{
+			ImVec2 delta = io.MouseDelta;
+			editorCamera->SetRotation(delta.x * 1.0f, delta.y * 0.1f); // Sensitivity
+		}
+	}
+
+	// Update matrices
+	editorCamera->UpdateViewMatrix();
+	editorCamera->UpdateProjectionMatrix();
+
+	// Pass camera matrices to renderer
+	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
+	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
 
 	renderer.RenderToTexture();
 

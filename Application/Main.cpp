@@ -8,7 +8,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // Initialize the application
-    BlackJawz::Engine* engine = new  BlackJawz::Engine();
+    BlackJawz::Engine* engine = new BlackJawz::Engine();
 
     engine->Setup(hInstance, nCmdShow);
 
@@ -43,5 +43,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
     // Cleanup
     engine->Cleanup();
     delete engine;
+
     return (int)msg.wParam;
 }

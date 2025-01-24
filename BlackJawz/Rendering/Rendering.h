@@ -2,7 +2,6 @@
 #include "../pch.h"
 #include "../Windows/Application.h"
 
-
 namespace BlackJawz::Application
 {
 	class Application;
@@ -12,6 +11,13 @@ struct Vertex
 {
 	DirectX::XMFLOAT3 position; // Position of the vertex
 	DirectX::XMFLOAT4 color;    // Color of the vertex
+};
+
+struct ConstantBuffer
+{
+	XMMATRIX World;
+	XMMATRIX View;
+	XMMATRIX Projection;
 };
 
 namespace BlackJawz::Rendering
@@ -34,6 +40,11 @@ namespace BlackJawz::Rendering
 		ID3D11ShaderResourceView* GetShaderResourceView() const {return  pShaderResourceView.Get();	} // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
 
+		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
+		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
+
+		void CleanUp();
+
 	private:
 		HRESULT InitDeviceAndSwapChain();
 		HRESULT InitRenderTargetView();
@@ -43,7 +54,9 @@ namespace BlackJawz::Rendering
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
 		HRESULT InitImGui();
+		HRESULT InitConstantBuffer();
 		HRESULT InitTriangle();
+		HRESULT InitCube();
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -52,7 +65,6 @@ namespace BlackJawz::Rendering
 
 		D3D_DRIVER_TYPE         _driverType;
 		D3D_FEATURE_LEVEL       _featureLevel;
-
 
 		// Shaders
 		ComPtr<ID3D11VertexShader> pVertexShader;
@@ -85,5 +97,15 @@ namespace BlackJawz::Rendering
 		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
 
 		ComPtr<ID3D11Buffer> vertexBuffer;
+
+		ComPtr<ID3D11Buffer> pCubeVertexBuffer;
+		ComPtr<ID3D11Buffer> pCubeIndexBuffer;
+
+		// Constant Buffer
+		ComPtr<ID3D11Buffer> pConstantBuffer;
+
+		// Camera
+		XMFLOAT4X4 viewMatrix;
+		XMFLOAT4X4 projectionMatrix;
 	};
 }

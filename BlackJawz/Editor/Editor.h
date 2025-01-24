@@ -2,6 +2,8 @@
 #include "../pch.h"
 #include "../Rendering/Rendering.h"
 
+#include "../Editor/EditorCamera.h"
+
 namespace BlackJawz::Editor
 {
 	class Editor
@@ -20,5 +22,8 @@ namespace BlackJawz::Editor
 	private:
 		bool showImGuiDemo = false;
 		std::vector<std::string> objects;
+
+		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;
+		
 	};
 }

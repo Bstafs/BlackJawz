@@ -34,5 +34,5 @@ void BlackJawz::Engine::Run()
 void BlackJawz::Engine::Cleanup()
 {
 	// Engine Setup implementation
-
+	mRendering->CleanUp();
 }

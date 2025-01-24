@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <math.h>
 
 // Windows
 #include <windows.h>
@@ -27,6 +28,7 @@
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 #include <directxmath.h>
+#include <DirectXMath.h>
 #include <directxcolors.h>
 #include "Util/ID3D11Functions.h"
 
@@ -38,3 +40,5 @@
 #endif //PCH_H
 
 using Microsoft::WRL::ComPtr;
+using namespace DirectX;
+

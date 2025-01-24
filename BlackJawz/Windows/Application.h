@@ -19,7 +19,6 @@ namespace BlackJawz::Application
 		HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow);
 
 		static HWND _hWnd;
-		 HWND hExitButton;
 		static UINT _WindowWidth;
 		static UINT _WindowHeight;
 	};

@@ -22,8 +22,6 @@ namespace BlackJawz::Editor
 	private:
 		bool showImGuiDemo = false;
 		std::vector<std::string> objects;
-
-		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;
-		
+		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;	
 	};
 }

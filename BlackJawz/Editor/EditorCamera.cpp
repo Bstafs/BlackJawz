@@ -1,7 +1,7 @@
 #include "EditorCamera.h"
 
 BlackJawz::EditorCamera::EditorCamera::EditorCamera(float fov, float aspectRation, float nearPlane, float farPlane)
-	: cameraPosition({ 0.0f, 0.0f, -5.0f }), 
+	: cameraPosition({ 0.0f, 0.0f, 0.0f }), 
 	  cameraPitch(0.0f), 
 	  cameraYaw(0.0f), 
 	  cameraFOV(fov), 
@@ -16,27 +16,26 @@ BlackJawz::EditorCamera::EditorCamera::EditorCamera(float fov, float aspectRatio
 
 void BlackJawz::EditorCamera::EditorCamera::UpdateViewMatrix()
 {
-    // Calculate the camera's direction vector
-    XMVECTOR forward = XMVector3Normalize(
-        XMVectorSet(
-            cosf(cameraYaw) * cosf(cameraPitch),
-            sinf(cameraPitch),
-            sinf(cameraYaw) * cosf(cameraPitch),
-            0.0f
-        ));
+	XMVECTOR position = XMLoadFloat3(&cameraPosition);
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(cameraPitch, cameraYaw, 0.0f);
 
-    // Calculate right and up vectors
-    XMVECTOR right = XMVector3Normalize(XMVector3Cross(forward, XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
-    XMVECTOR up = XMVector3Cross(right, forward);
+	// Forward direction
+	XMVECTOR forward = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f), rotation);
+	XMVECTOR lookAt = position + forward;
 
-    // Calculate the view matrix
-    XMVECTOR position = XMLoadFloat3(&cameraPosition);
-    XMMATRIX view = XMMatrixLookToLH(position, forward, up);
-    XMStoreFloat4x4(&viewMatrix, view);
+	// Up direction
+	XMVECTOR up = XMVector3TransformCoord(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), rotation);
+
+	XMStoreFloat4x4(&viewMatrix, XMMatrixLookAtLH(position, lookAt, up));
 }
 
 void BlackJawz::EditorCamera::EditorCamera::UpdateProjectionMatrix()
 {
-    XMMATRIX projection = XMMatrixPerspectiveFovLH(cameraFOV, cameraAspectRatio, cameraNearPlane, cameraFarPlane);
-    XMStoreFloat4x4(&projectionMatrix, projection);
+	XMMATRIX projection = XMMatrixPerspectiveFovLH(
+		XMConvertToRadians(cameraFOV),
+		cameraAspectRatio,
+		cameraNearPlane,
+		cameraFarPlane
+	);
+	XMStoreFloat4x4(&projectionMatrix, projection);
 }

@@ -45,7 +45,7 @@ HRESULT BlackJawz::Rendering::Render::InitDeviceAndSwapChain()
 	sd.BufferDesc.Width = BlackJawz::Application::Application::GetWindowWidth();
 	sd.BufferDesc.Height = BlackJawz::Application::Application::GetWindowHeight();
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferDesc.RefreshRate.Numerator = 165;
+	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.OutputWindow = BlackJawz::Application::Application::GetWindow();
@@ -175,6 +175,7 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 	if (FAILED(hr)) {
 		throw std::runtime_error("Failed to create shader resource view.");
 	}
+
 }
 
 HRESULT BlackJawz::Rendering::Render::InitViewPort()
@@ -334,7 +335,13 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CCWcullMode.GetAddressOf());
 
 	cmdesc.FrontCounterClockwise = false;
+	cmdesc.DepthClipEnable = true;
+	cmdesc.ScissorEnable = false;
+	cmdesc.MultisampleEnable = false;
+	cmdesc.AntialiasedLineEnable = false;
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CWcullMode.GetAddressOf());
+
+	pImmediateContext.Get()->RSSetState(CWcullMode.Get());
 
 	return hr;
 }
@@ -419,21 +426,46 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	// Create vertex buffer
 	Vertex vertices[] =
 	{
-	{ XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
-	{ XMFLOAT3(1.0f, -1.0f,  1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-	{ XMFLOAT3(1.0f,  1.0f,  1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
-	{ XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) },
+		// Top face (Gradient from Red -> Green -> Blue -> Red)
+	{ {-1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ { 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ { 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ {-1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
 
-	// Back face
-	{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) },
-	{ XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) },
-	{ XMFLOAT3(1.0f,  1.0f, -1.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) },
-	{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) },
+	// Bottom face (Gradient from Red -> Blue -> Green -> Red)
+	{ {-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ { 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ {-1.0f, -1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+
+	// Left face (Gradient from Green -> Blue -> Red -> Green)
+	{ {-1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ {-1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ {-1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ {-1.0f,  1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+
+	// Right face (Gradient from Blue -> Red -> Green -> Blue)
+	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ { 1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ { 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ { 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+
+	// Front face (Gradient from Green -> Blue -> Red -> Green)
+	{ {-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ { 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ { 1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ {-1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+
+	// Back face (Gradient from Blue -> Green -> Red -> Blue)
+	{ {-1.0f, -1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
+	{ { 1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
+	{ {-1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
 	};
 
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(Vertex) * 8;
+	bd.ByteWidth = sizeof(Vertex) * 24;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -446,12 +478,23 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	// Create index buffer
 	WORD indices[] =
 	{
-	0, 1, 2, 0, 2, 3,  // Front face
-	4, 5, 6, 4, 6, 7,  // Back face
-	0, 1, 5, 0, 5, 4,  // Left face
-	2, 3, 7, 2, 7, 6,  // Right face
-	3, 0, 4, 3, 4, 7,  // Top face
-	1, 2, 6, 1, 6, 5   // Bottom face
+		3,1,0,
+		2,1,3,
+
+		6,4,5,
+		7,4,6,
+
+		11,9,8,
+		10,9,11,
+
+		14,12,13,
+		15,12,14,
+
+		19,17,16,
+		18,17,19,
+
+		22,20,21,
+		23,20,22
 	};
 
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -554,49 +597,58 @@ void BlackJawz::Rendering::Render::RenderToTexture()
 
 void BlackJawz::Rendering::Render::Update()
 {
+	XMFLOAT3 pos = XMFLOAT3(0.0f, 0.0f, 10.0f);
+	XMMATRIX mTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	XMMATRIX rotX = XMMatrixRotationY(15.0f);
+	XMMATRIX rotY = XMMatrixRotationX(15.0f);
 
+	mTranslate = rotX * rotY * mTranslate;
+
+	XMStoreFloat4x4(&mWorld, mTranslate);
 }
 
 void BlackJawz::Rendering::Render::BeginFrame()
 {
 	// Clear the back buffer
-	//pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
-	SetBackGroundColour(0.1f, 0.1f, 0.1f, 1.0f);
+	SetBackGroundColour(0.0f, 0.0f, 0.0f, 1.0f);
 	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
 	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
 }
 
 void BlackJawz::Rendering::Render::Draw()
 {
 	// Scene Render
-	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
-	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	pImmediateContext.Get()->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-	// pImmediateContext.Get()->IASetVertexBuffers(0, 1, pCubeVertexBuffer.GetAddressOf(), &stride, &offset);
-    // pImmediateContext.Get()->IASetIndexBuffer(pCubeIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
-	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-
-	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
-
 	ConstantBuffer cb = {};
 
 	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
 
-	cb.World = XMMatrixTranspose(XMMatrixIdentity());
+	cb.World = XMMatrixTranspose(XMLoadFloat4x4(&mWorld));
 	cb.View = XMMatrixTranspose(view);
 	cb.Projection = XMMatrixTranspose(projection);
 
 	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
-	pImmediateContext.Get()->Draw(3, 0);
-	//pImmediateContext.Get()->DrawIndexed(36, 0, 0);
+	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
+	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	//pImmediateContext.Get()->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
+	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pCubeVertexBuffer.GetAddressOf(), &stride, &offset);
+    pImmediateContext.Get()->IASetIndexBuffer(pCubeIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+
+	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+
+	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+
+	//pImmediateContext.Get()->Draw(3, 0);
+	pImmediateContext.Get()->DrawIndexed(36, 0, 0);
 }
 
 void BlackJawz::Rendering::Render::EndFrame()

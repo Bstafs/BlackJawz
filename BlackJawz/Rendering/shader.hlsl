@@ -23,12 +23,12 @@ PSInput MainVS(VSInput input)
 {
     PSInput output;
       
-    output.Position = mul(input.Position, World);
+    output.Position = mul(float4(input.Position, 1.0f), World);
     output.Position = mul(output.Position, View);
     output.Position = mul(output.Position, Projection);
     
     
-    //output.Position = float4(input.Position, 1.0f); // Transform position
+   // output.Position = float4(input.Position, 1.0f); // Transform position
     output.Color = input.Color; // Pass color to the pixel shader
     
     return output;

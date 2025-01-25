@@ -107,5 +107,7 @@ namespace BlackJawz::Rendering
 		// Camera
 		XMFLOAT4X4 viewMatrix;
 		XMFLOAT4X4 projectionMatrix;
+
+		XMFLOAT4X4 mWorld;
 	};
 }

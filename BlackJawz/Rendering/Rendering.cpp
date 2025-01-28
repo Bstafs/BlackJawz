@@ -384,6 +384,26 @@ HRESULT BlackJawz::Rendering::Render::InitConstantBuffer()
 	return hr;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitGameObjectGeometry()
+{
+	HRESULT hr = S_OK;
+
+	BlackJawz::GameObject::Appearance::Geometry cubeGeometry;
+	cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
+	cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
+	cubeGeometry.IndicesCount = 36;
+	cubeGeometry.vertexBufferOffset = 0;
+	cubeGeometry.vertexBufferStride = sizeof(Vertex);
+
+	BlackJawz::GameObject::GameObject* gameObjectCube = new BlackJawz::GameObject::GameObject(cubeGeometry);
+	gameObjectCube->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
+	gameObjectCube->GetTransform()->SetScale(1.0f, 1.0f, 1.0f);
+	gameObjectCube->GetTransform()->SetRotation(15.0f, 15.0f, 0.0f);
+	pGameObjectList.push_back(gameObjectCube);
+
+	return hr;
+}
+
 HRESULT BlackJawz::Rendering::Render::InitCube()
 {
 	HRESULT hr = S_OK;
@@ -517,6 +537,11 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	}
 
 	if (FAILED(InitConstantBuffer()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitGameObjectGeometry()))
 	{
 		return E_FAIL;
 	}

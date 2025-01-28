@@ -1,6 +1,7 @@
 #pragma once
 #include "../pch.h"
 #include "../Windows/Application.h"
+#include "GameObjects/GameObject.h"
 
 namespace BlackJawz::Application
 {
@@ -55,7 +56,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitRasterizer();
 		HRESULT InitImGui();
 		HRESULT InitConstantBuffer();
-		HRESULT InitTriangle();
+		HRESULT InitGameObjectGeometry();
 		HRESULT InitCube();
 
 	private:
@@ -98,6 +99,8 @@ namespace BlackJawz::Rendering
 
 		ComPtr<ID3D11Buffer> pCubeVertexBuffer;
 		ComPtr<ID3D11Buffer> pCubeIndexBuffer;
+
+		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectList;
 
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pConstantBuffer;

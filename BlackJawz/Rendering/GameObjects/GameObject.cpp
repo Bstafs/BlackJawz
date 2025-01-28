@@ -1,7 +1,8 @@
 #include "GameObject.h"
 
-BlackJawz::GameObject::GameObject::GameObject(BlackJawz::GameObject::Appearance::Geometry objectGeometry)
+BlackJawz::GameObject::GameObject::GameObject(std::string name, BlackJawz::GameObject::Appearance::Geometry objectGeometry)
 {
+	objectName = name;
 	pGameObjectTransform = new BlackJawz::GameObject::Transform::Transform();
 	pGameObjectAppearance = new BlackJawz::GameObject::Appearance::Appearance(objectGeometry);
 }

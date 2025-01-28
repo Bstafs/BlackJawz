@@ -384,25 +384,6 @@ HRESULT BlackJawz::Rendering::Render::InitConstantBuffer()
 	return hr;
 }
 
-HRESULT BlackJawz::Rendering::Render::InitGameObjectGeometry()
-{
-	HRESULT hr = S_OK;
-
-	BlackJawz::GameObject::Appearance::Geometry cubeGeometry;
-	cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
-	cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
-	cubeGeometry.IndicesCount = 36;
-	cubeGeometry.vertexBufferOffset = 0;
-	cubeGeometry.vertexBufferStride = sizeof(Vertex);
-
-	BlackJawz::GameObject::GameObject* gameObjectCube = new BlackJawz::GameObject::GameObject(cubeGeometry);
-	gameObjectCube->GetTransform()->SetPosition(0.0f, 0.0f, 5.0f);
-	gameObjectCube->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
-	gameObjectCube->GetTransform()->SetRotation(15.0f, 15.0f, 0.0f);
-	pGameObjectList.push_back(gameObjectCube);
-	return hr;
-}
-
 HRESULT BlackJawz::Rendering::Render::InitCube()
 {
 	HRESULT hr = S_OK;
@@ -493,6 +474,126 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	return hr; // Return S_OK if everything succeeded
 }
 
+HRESULT BlackJawz::Rendering::Render::InitSphere()
+{
+	HRESULT hr = S_OK;
+
+	float radius = 1.0f;
+	float numSubdivisions = 32.0f;
+
+	const float pi = XM_PI;
+	const float twoPi = 2.0f * pi;
+
+	// Generate vertices
+	for (int i = 0; i <= numSubdivisions; ++i)
+	{
+		// Golden Ratio
+		float phi = pi * static_cast<float>(i) / numSubdivisions;
+
+		for (int j = 0; j <= numSubdivisions; ++j)
+		{
+			float theta = twoPi * static_cast<float>(j) / numSubdivisions;
+
+			Vertex vertex;
+
+			vertex.position.x = radius * sin(phi) * cos(theta);
+			vertex.position.y = radius * cos(phi);
+			vertex.position.z = radius * sin(phi) * sin(theta);
+
+			vertex.color.x = vertex.position.x / radius; // Red based on x
+			vertex.color.y = vertex.position.y / radius; // Green based on y
+			vertex.color.z = vertex.position.z / radius; // Blue based on z
+
+			sphereVertices.push_back(vertex);
+		}
+	}
+
+	// Generate indices
+	for (int i = 0; i < numSubdivisions; ++i) {
+		for (int j = 0; j < numSubdivisions; ++j) {
+			int v0 = i * (numSubdivisions + 1) + j;
+			int v1 = v0 + 1;
+			int v2 = (i + 1) * (numSubdivisions + 1) + j;
+			int v3 = v2 + 1;
+
+			sphereIndices.push_back(v0);
+			sphereIndices.push_back(v2);
+			sphereIndices.push_back(v1);
+
+			sphereIndices.push_back(v1);
+			sphereIndices.push_back(v2);
+			sphereIndices.push_back(v3);
+		}
+	}
+
+	D3D11_BUFFER_DESC vbDesc, ibDesc;
+	D3D11_SUBRESOURCE_DATA vbData, ibData;
+
+	// Vertex Buffer
+	vbDesc.Usage = D3D11_USAGE_DEFAULT;
+	vbDesc.ByteWidth = sizeof(Vertex) * sphereVertices.size();
+	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbDesc.CPUAccessFlags = 0;
+	vbDesc.MiscFlags = 0;
+	vbData.pSysMem = sphereVertices.data();
+	pID3D11Device.Get()->CreateBuffer(&vbDesc, &vbData, pSphereVertexBuffer.GetAddressOf());
+
+	// Index Buffer
+	ibDesc.Usage = D3D11_USAGE_DEFAULT;
+	ibDesc.ByteWidth = sizeof(WORD) * sphereIndices.size();
+	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibDesc.CPUAccessFlags = 0;
+	ibDesc.MiscFlags = 0;
+	ibData.pSysMem = sphereIndices.data();
+	pID3D11Device.Get()->CreateBuffer(&ibDesc, &ibData, pSphereIndexBuffer.GetAddressOf());
+
+	return hr;
+}
+
+HRESULT BlackJawz::Rendering::Render::InitPlane()
+{
+	HRESULT hr = S_OK;
+
+	// Create vertex buffer
+	Vertex vertices[] =
+	{
+	{ {-1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+	{ {-1.0f, 0.0f, -1.0f  }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+	{ {1.0f, 0.0f, 1.0f}, { 0.0f, 0.0f, 1.0f, 1.0f } },
+	{ {1.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+	};
+
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(Vertex) * 4;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData = {};
+	InitData.pSysMem = vertices;
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pPlaneVertexBuffer.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	// Create index buffer
+	WORD indices[] =
+	{
+		0, 2, 1,
+		2, 3, 1,
+	};
+
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(WORD) * 6;
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+	InitData.pSysMem = indices;
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pPlaneIndexBuffer.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	return hr; // Return S_OK if everything succeeded
+}
+
 HRESULT BlackJawz::Rendering::Render::Initialise()
 {
 	if (FAILED(InitDeviceAndSwapChain()))
@@ -545,12 +646,129 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
-	if (FAILED(InitGameObjectGeometry()))
+	if (FAILED(InitSphere()))
 	{
 		return E_FAIL;
 	}
 
+	InitPlane();
+
+
 	return S_OK;
+}
+
+void BlackJawz::Rendering::Render::RenderCube(UINT newCount)
+{
+	if (newCount == cubeCount)
+		return; // No change needed
+
+	if (newCount > cubeCount)
+	{
+		// Add new cubes
+		for (int i = cubeCount; i < newCount; i++)
+		{
+			BlackJawz::GameObject::Appearance::Geometry cubeGeometry;
+			cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
+			cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
+			cubeGeometry.IndicesCount = 36;
+			cubeGeometry.vertexBufferOffset = 0;
+			cubeGeometry.vertexBufferStride = sizeof(Vertex);
+
+			BlackJawz::GameObject::GameObject* gameObjectCube = new BlackJawz::GameObject::GameObject("Cube " + i, cubeGeometry);
+			gameObjectCube->GetTransform()->SetPosition(-2.0f + (i * 2.0f), 0.0f, 5.0f);
+			gameObjectCube->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
+			gameObjectCube->GetTransform()->SetRotation(15.0f, 15.0f, 0.0f);
+
+			pGameObjectListCube.push_back(gameObjectCube);
+		}
+	}
+	else if (newCount < cubeCount)
+	{
+		// Remove extra cubes
+		for (int i = cubeCount; i > newCount; i--)
+		{
+			delete pGameObjectListCube.back(); // Clean up memory for removed cubes
+			pGameObjectListCube.pop_back();
+		}
+	}
+
+	cubeCount = newCount; // Update the count
+}
+
+void BlackJawz::Rendering::Render::RenderSphere(UINT newCount)
+{
+	if (newCount == sphereCount)
+		return; // No change needed
+
+	if (newCount > sphereCount)
+	{
+		// Add new cubes
+		for (int i = sphereCount; i < newCount; i++)
+		{
+			BlackJawz::GameObject::Appearance::Geometry sphereGeometry;
+			sphereGeometry.pIndexBuffer = pSphereIndexBuffer;
+			sphereGeometry.pVertexBuffer = pSphereVertexBuffer;
+			sphereGeometry.IndicesCount = sphereIndices.size();
+			sphereGeometry.vertexBufferOffset = 0;
+			sphereGeometry.vertexBufferStride = sizeof(Vertex);
+
+			BlackJawz::GameObject::GameObject* gameObjectSphere = new BlackJawz::GameObject::GameObject("Sphere " + i, sphereGeometry);
+			gameObjectSphere->GetTransform()->SetPosition(-2.0f + (i * 2.0f), 1.5f, 5.0f);
+			gameObjectSphere->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
+			gameObjectSphere->GetTransform()->SetRotation(0.0f, 0.0f, 0.0f);
+
+			pGameObjectListSphere.push_back(gameObjectSphere);
+		}
+	}
+	else if (newCount < sphereCount)
+	{
+		// Remove extra cubes
+		for (int i = sphereCount; i > newCount; i--)
+		{
+			delete pGameObjectListSphere.back(); // Clean up memory for removed cubes
+			pGameObjectListSphere.pop_back();
+		}
+	}
+
+	sphereCount = newCount; // Update the count
+}
+
+void BlackJawz::Rendering::Render::RenderPlane(UINT newCount)
+{
+	if (newCount == planeCount)
+		return; // No change needed
+
+	if (newCount > planeCount)
+	{
+		// Add new cubes
+		for (int i = planeCount; i < newCount; i++)
+		{
+			BlackJawz::GameObject::Appearance::Geometry planeGeometry;
+			planeGeometry.pIndexBuffer = pPlaneIndexBuffer;
+			planeGeometry.pVertexBuffer = pPlaneVertexBuffer;
+			planeGeometry.IndicesCount = 6;
+			planeGeometry.vertexBufferOffset = 0;
+			planeGeometry.vertexBufferStride = sizeof(Vertex);
+
+			BlackJawz::GameObject::GameObject* gameObjectPlane = new BlackJawz::GameObject::GameObject("Plane " + i, planeGeometry);
+			gameObjectPlane->GetTransform()->SetPosition(0.0f, -3.0f, 10.0f + (i * 20.0f));
+			gameObjectPlane->GetTransform()->SetScale(10.0f, 10.0f, 10.0f);
+			gameObjectPlane->GetTransform()->SetRotation(0.0f, 0.0f, 0.0f);
+
+			pGameObjectListPlane.push_back(gameObjectPlane);
+		}
+	}
+	else if (newCount < planeCount)
+	{
+		// Remove extra cubes
+		for (int i = planeCount; i > newCount; i--)
+		{
+			delete pGameObjectListPlane.back(); // Clean up memory for removed cubes
+			pGameObjectListPlane.pop_back();
+		}
+	}
+
+	planeCount = newCount; // Update the count
 }
 
 void BlackJawz::Rendering::Render::RenderToTexture()
@@ -581,10 +799,20 @@ void BlackJawz::Rendering::Render::RenderToTexture()
 
 void BlackJawz::Rendering::Render::Update()
 {
-	for (auto gameObjects : pGameObjectList)
+	for (auto gameObjects : pGameObjectListCube)
 	{
 		gameObjects->Update();
-    }
+	}
+
+	for (auto gameObjects : pGameObjectListSphere)
+	{
+		gameObjects->Update();
+	}
+
+	for (auto gameObjects : pGameObjectListPlane)
+	{
+		gameObjects->Update();
+	}
 }
 
 void BlackJawz::Rendering::Render::BeginFrame()
@@ -618,12 +846,28 @@ void BlackJawz::Rendering::Render::Draw()
 
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	for (auto gameObjects : pGameObjectList)
+	for (auto gameObjectsCube : pGameObjectListCube)
 	{
-		cb.World = XMMatrixTranspose(gameObjects->GetTransform()->GetWorldMatrix());
+		cb.World = XMMatrixTranspose(gameObjectsCube->GetTransform()->GetWorldMatrix());
 		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
-		gameObjects->Draw(pImmediateContext.Get());
+		gameObjectsCube->Draw(pImmediateContext.Get());
+	}
+
+	for (auto gameObjectsSphere : pGameObjectListSphere)
+	{
+		cb.World = XMMatrixTranspose(gameObjectsSphere->GetTransform()->GetWorldMatrix());
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
+		gameObjectsSphere->Draw(pImmediateContext.Get());
+	}
+
+	for (auto gameObjectsPlane : pGameObjectListPlane)
+	{
+		cb.World = XMMatrixTranspose(gameObjectsPlane->GetTransform()->GetWorldMatrix());
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
+		gameObjectsPlane->Draw(pImmediateContext.Get());
 	}
 }
 

@@ -63,7 +63,7 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	// Render editor components
 	MenuBar();          // Menu at the top
 	ContentMenu();      // Content browser (dockable)
-	Hierarchy();        // Hierarchy window (dockable)
+	Hierarchy(renderer);        // Hierarchy window (dockable)
 	ObjectProperties(); // Object properties (dockable)
 	ViewPort(renderer); // Viewport (dockable)
 
@@ -125,7 +125,7 @@ void BlackJawz::Editor::Editor::ContentMenu()
 	ImGui::End();
 }
 
-void BlackJawz::Editor::Editor::Hierarchy()
+void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 {
 	ImGui::Begin("Hierarchy");
 
@@ -143,7 +143,7 @@ void BlackJawz::Editor::Editor::Hierarchy()
 
 		// Display each object in the hierarchy
 		bool isSelected = selectedObject == static_cast<int>(i);
-		if (ImGui::Selectable(objects[i].c_str(), isSelected))
+		if (ImGui::Selectable(objects[i].name.c_str(), isSelected))
 		{
 			selectedObject = static_cast<int>(i);
 		}
@@ -153,7 +153,7 @@ void BlackJawz::Editor::Editor::Hierarchy()
 		{
 			// Enter renaming mode
 			isRenaming = true;
-			strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].c_str(), _TRUNCATE); // Copy current name
+			strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].name.c_str(), _TRUNCATE); // Copy current name
 			selectedObject = static_cast<int>(i); // Keep track of which object is being renamed
 		}
 
@@ -166,7 +166,7 @@ void BlackJawz::Editor::Editor::Hierarchy()
 			if (ImGui::InputText("##Rename", renameBuffer, sizeof(renameBuffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 			{
 				// When Enter is pressed, update the name and exit renaming mode
-				objects[i] = renameBuffer;
+				objects[i].name = renameBuffer;
 				isRenaming = false; // Exit renaming mode
 			}
 
@@ -190,19 +190,26 @@ void BlackJawz::Editor::Editor::Hierarchy()
 			if (ImGui::MenuItem("Rename"))
 			{
 				// Set renaming mode if the "Rename" option is selected
-				strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].c_str(), _TRUNCATE); // Copy current name
+				strncpy_s(renameBuffer, sizeof(renameBuffer), objects[i].name.c_str(), _TRUNCATE); // Copy current name
 				isRenaming = true; // Set renaming mode
 				selectedObject = static_cast<int>(i); // Track the selected object
 				ImGui::CloseCurrentPopup();
 				objectContextMenuOpened = false; // Ensure no lingering state
 			}
 
-			if (ImGui::MenuItem("Delete"))
-			{
+			if (ImGui::MenuItem("Delete")) {
 				// Remove the object from the list
-				objects.erase(objects.begin() + i);
+				if (objects[i].type == "Cube") {
+					renderer.RenderCube(renderer.GetCubeCount() - 1); // Decrease cube count
+				}
+				else if (objects[i].type == "Sphere") {
+					renderer.RenderSphere(renderer.GetSphereCount() - 1); // Decrease sphere count
+				}
+				else if (objects[i].type == "Plane") {
+					renderer.RenderPlane(renderer.GetPlaneCount() - 1); // Decrease plane count
+				}
 
-				// Delete Object Code Here Later
+				objects.erase(objects.begin() + i);
 
 				// Adjust the selected object index
 				if (selectedObject == static_cast<int>(i))
@@ -227,20 +234,26 @@ void BlackJawz::Editor::Editor::Hierarchy()
 		ImGui::OpenPopup("HierarchyContextMenu"); // Open the Add Object menu
 	}
 
+	int cubeCounter = 0;
+	int sphereCounter = 0;
+
 	// Add a right-click context menu for adding new objects
 	if (ImGui::BeginPopup("HierarchyContextMenu"))
 	{
 		if (ImGui::MenuItem("Add Cube"))
 		{
-			objects.push_back(static_cast<std::string>("Cube"));
+			renderer.RenderCube(renderer.GetCubeCount() + 1);
+			objects.push_back({ "Cube" + std::to_string(renderer.GetCubeCount()), "Cube"});
 		}
 		if (ImGui::MenuItem("Add Sphere"))
 		{
-			objects.push_back(static_cast<std::string>("Sphere"));
+			renderer.RenderSphere(renderer.GetSphereCount() + 1);
+			objects.push_back({ "Sphere" + std::to_string(renderer.GetSphereCount()), "Sphere"});
 		}
 		if (ImGui::MenuItem("Add Plane"))
 		{
-			objects.push_back(static_cast<std::string>("Plane"));
+			renderer.RenderPlane(renderer.GetPlaneCount() + 1);
+			objects.push_back({ "Plane" + std::to_string(renderer.GetPlaneCount()), "Plane" });
 		}
 
 		ImGui::EndPopup();

@@ -8,8 +8,10 @@ namespace BlackJawz::GameObject
 	class GameObject
 	{
 	public:
-		GameObject(BlackJawz::GameObject::Appearance::Geometry objectGeometry);
+		GameObject(std::string name, BlackJawz::GameObject::Appearance::Geometry objectGeometry);
 		~GameObject();
+
+		std::string GetObjectName() const { return objectName; }
 
 		BlackJawz::GameObject::Transform::Transform* GetTransform() const { return pGameObjectTransform; }
 		BlackJawz::GameObject::Appearance::Appearance* GetAppearance() const { return pGameObjectAppearance; }

@@ -44,6 +44,15 @@ namespace BlackJawz::Rendering
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
 
+		UINT GetCubeCount() const { return cubeCount; }
+		void RenderCube(UINT NumberOfCubes);
+
+		UINT GetSphereCount() const { return sphereCount; }
+		void RenderSphere(UINT NumberOfSpheres);
+
+		UINT GetPlaneCount() const { return planeCount; }
+		void RenderPlane(UINT NumberOfPlanes);
+
 		void CleanUp();
 
 	private:
@@ -56,8 +65,9 @@ namespace BlackJawz::Rendering
 		HRESULT InitRasterizer();
 		HRESULT InitImGui();
 		HRESULT InitConstantBuffer();
-		HRESULT InitGameObjectGeometry();
 		HRESULT InitCube();
+		HRESULT InitSphere();
+		HRESULT InitPlane();
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -97,10 +107,27 @@ namespace BlackJawz::Rendering
 		int renderWidth = BlackJawz::Application::Application::GetWindowWidth();
 		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
 
+		// Cube
 		ComPtr<ID3D11Buffer> pCubeVertexBuffer;
 		ComPtr<ID3D11Buffer> pCubeIndexBuffer;
+		UINT cubeCount = 0;
 
-		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectList;
+		// Sphere
+		ComPtr<ID3D11Buffer> pSphereVertexBuffer;
+		ComPtr<ID3D11Buffer> pSphereIndexBuffer;
+		std::vector<Vertex> sphereVertices;
+		std::vector<WORD> sphereIndices;
+		UINT sphereCount = 0;
+
+		// Plane
+		ComPtr<ID3D11Buffer> pPlaneVertexBuffer;
+		ComPtr<ID3D11Buffer> pPlaneIndexBuffer;
+		UINT planeCount = 0;
+
+		// Primitive Object Lists
+		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListCube;
+		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListSphere;
+		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListPlane;
 
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pConstantBuffer;

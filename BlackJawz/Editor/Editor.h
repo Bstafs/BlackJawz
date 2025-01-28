@@ -6,6 +6,12 @@
 
 namespace BlackJawz::Editor
 {
+	struct Object
+	{
+		std::string name;
+		std::string type;
+	};
+
 	class Editor
 	{
 	public:
@@ -16,12 +22,12 @@ namespace BlackJawz::Editor
 	private:
 		void MenuBar();
 		void ContentMenu();
-		void Hierarchy();
+		void Hierarchy(Rendering::Render& renderer);
 		void ObjectProperties();
 		void ViewPort(Rendering::Render& renderer);
 	private:
 		bool showImGuiDemo = false;
-		std::vector<std::string> objects;
+		std::vector<Object> objects;
 		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;	
 	};
 }

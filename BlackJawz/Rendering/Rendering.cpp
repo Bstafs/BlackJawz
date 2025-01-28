@@ -396,11 +396,10 @@ HRESULT BlackJawz::Rendering::Render::InitGameObjectGeometry()
 	cubeGeometry.vertexBufferStride = sizeof(Vertex);
 
 	BlackJawz::GameObject::GameObject* gameObjectCube = new BlackJawz::GameObject::GameObject(cubeGeometry);
-	gameObjectCube->GetTransform()->SetPosition(0.0f, 0.0f, 0.0f);
-	gameObjectCube->GetTransform()->SetScale(1.0f, 1.0f, 1.0f);
+	gameObjectCube->GetTransform()->SetPosition(0.0f, 0.0f, 5.0f);
+	gameObjectCube->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
 	gameObjectCube->GetTransform()->SetRotation(15.0f, 15.0f, 0.0f);
 	pGameObjectList.push_back(gameObjectCube);
-
 	return hr;
 }
 
@@ -541,12 +540,12 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
-	if (FAILED(InitGameObjectGeometry()))
+	if (FAILED(InitCube()))
 	{
 		return E_FAIL;
 	}
 
-	if (FAILED(InitCube()))
+	if (FAILED(InitGameObjectGeometry()))
 	{
 		return E_FAIL;
 	}
@@ -582,14 +581,10 @@ void BlackJawz::Rendering::Render::RenderToTexture()
 
 void BlackJawz::Rendering::Render::Update()
 {
-	XMFLOAT3 pos = XMFLOAT3(0.0f, 0.0f, 10.0f);
-	XMMATRIX mTranslate = XMMatrixTranslation(pos.x, pos.y, pos.z);
-	XMMATRIX rotX = XMMatrixRotationY(15.0f);
-	XMMATRIX rotY = XMMatrixRotationX(15.0f);
-
-	mTranslate = rotX * rotY * mTranslate;
-
-	XMStoreFloat4x4(&mWorld, mTranslate);
+	for (auto gameObjects : pGameObjectList)
+	{
+		gameObjects->Update();
+    }
 }
 
 void BlackJawz::Rendering::Render::BeginFrame()
@@ -609,19 +604,11 @@ void BlackJawz::Rendering::Render::Draw()
 	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
 
-	cb.World = XMMatrixTranspose(XMLoadFloat4x4(&mWorld));
 	cb.View = XMMatrixTranspose(view);
 	cb.Projection = XMMatrixTranspose(projection);
 
-	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
-
 	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
 	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pCubeVertexBuffer.GetAddressOf(), &stride, &offset);
-    pImmediateContext.Get()->IASetIndexBuffer(pCubeIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
 	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
@@ -631,7 +618,13 @@ void BlackJawz::Rendering::Render::Draw()
 
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	pImmediateContext.Get()->DrawIndexed(36, 0, 0);
+	for (auto gameObjects : pGameObjectList)
+	{
+		cb.World = XMMatrixTranspose(gameObjects->GetTransform()->GetWorldMatrix());
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
+		gameObjects->Draw(pImmediateContext.Get());
+	}
 }
 
 void BlackJawz::Rendering::Render::EndFrame()

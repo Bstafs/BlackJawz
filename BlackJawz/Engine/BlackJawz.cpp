@@ -27,8 +27,8 @@ void BlackJawz::Engine::Setup(HINSTANCE hInstance, int nCmdShow)
 void BlackJawz::Engine::Run()
 {
 	// Engine Setup implementation
-	mEditor->Render(*mRendering); 
 	mRendering->Update();
+	mEditor->Render(*mRendering); 
 }
 
 void BlackJawz::Engine::Cleanup()

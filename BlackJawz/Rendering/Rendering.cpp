@@ -199,7 +199,7 @@ HRESULT BlackJawz::Rendering::Render::InitShadersAndInputLayout()
 
 	// Compile the vertex shader
 	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
-	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/shader.hlsl", "MainVS", "vs_5_0", &vsBlob);
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/shader.hlsl", "MainVS", "vs_5_0", &vsBlob);
 	if (FAILED(hr))
 	{
 		OutputDebugString(L"Failed to compile vertex shader.\n");
@@ -208,7 +208,7 @@ HRESULT BlackJawz::Rendering::Render::InitShadersAndInputLayout()
 
 	// Compile the pixel shader
 	Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
-	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/shader.hlsl", "PS", "ps_5_0", &psBlob);
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/shader.hlsl", "PS", "ps_5_0", &psBlob);
 	if (FAILED(hr))
 	{
 		OutputDebugString(L"Failed to compile pixel shader.\n");

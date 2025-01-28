@@ -96,8 +96,6 @@ namespace BlackJawz::Rendering
 		int renderWidth = BlackJawz::Application::Application::GetWindowWidth();
 		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
 
-		ComPtr<ID3D11Buffer> vertexBuffer;
-
 		ComPtr<ID3D11Buffer> pCubeVertexBuffer;
 		ComPtr<ID3D11Buffer> pCubeIndexBuffer;
 

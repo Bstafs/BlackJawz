@@ -384,41 +384,6 @@ HRESULT BlackJawz::Rendering::Render::InitConstantBuffer()
 	return hr;
 }
 
-HRESULT BlackJawz::Rendering::Render::InitTriangle()
-{
-	HRESULT hr = S_OK;
-
-	// Define vertices for the square (two triangles sharing middle vertices)
-	Vertex vertices[] =
-	{
-		{ { 0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }, // Top vertex (red)
-		{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } }, // Bottom-right vertex (green)
-		{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } } // Bottom-left vertex (blue)
-	};
-
-	// Describe the vertex buffer
-	D3D11_BUFFER_DESC vertexBufferDesc = {};
-	vertexBufferDesc.ByteWidth = sizeof(vertices);              // Size of the vertex buffer
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;               // Usage type
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;      // Bind as a vertex buffer
-	vertexBufferDesc.CPUAccessFlags = 0;                        // No CPU access required
-	vertexBufferDesc.MiscFlags = 0;                             // No special flags
-
-	// Initialize the subresource data structure
-	D3D11_SUBRESOURCE_DATA vertexData = {};
-	vertexData.pSysMem = vertices;                              // Pointer to the vertex data
-
-	// Create the vertex buffer
-	hr = pID3D11Device.Get()->CreateBuffer(&vertexBufferDesc, &vertexData, vertexBuffer.GetAddressOf());
-	if (FAILED(hr))
-	{
-		OutputDebugStringA("Failed to create vertex buffer.\n");
-		return hr; // Return the HRESULT if buffer creation fails
-	}
-
-	return hr; // Return S_OK if everything succeeded
-}
-
 HRESULT BlackJawz::Rendering::Render::InitCube()
 {
 	HRESULT hr = S_OK;
@@ -556,11 +521,6 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
-	if (FAILED(InitTriangle()))
-	{
-		return E_FAIL;
-	}
-
 	if (FAILED(InitCube()))
 	{
 		return E_FAIL;
@@ -635,7 +595,6 @@ void BlackJawz::Rendering::Render::Draw()
 
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	//pImmediateContext.Get()->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pCubeVertexBuffer.GetAddressOf(), &stride, &offset);
     pImmediateContext.Get()->IASetIndexBuffer(pCubeIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
@@ -647,7 +606,6 @@ void BlackJawz::Rendering::Render::Draw()
 
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	//pImmediateContext.Get()->Draw(3, 0);
 	pImmediateContext.Get()->DrawIndexed(36, 0, 0);
 }
 

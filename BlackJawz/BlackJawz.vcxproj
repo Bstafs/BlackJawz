@@ -103,6 +103,9 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Rendering\GameObjects\Appearance.h" />
+    <ClInclude Include="Rendering\GameObjects\GameObject.h" />
+    <ClInclude Include="Rendering\GameObjects\Transform.h" />
     <ClInclude Include="Rendering\Rendering.h" />
     <ClInclude Include="Util\ID3D11Functions.h" />
     <ClInclude Include="Windows\Application.h" />
@@ -141,6 +144,15 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\Appearance.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\GameObject.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\Transform.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Rendering\Rendering.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>

@@ -22,6 +22,9 @@
     <Filter Include="Rendering\Shaders">
       <UniqueIdentifier>{f41f7408-7d36-4d46-ae3e-4dd027df9173}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Rendering\GameObjects">
+      <UniqueIdentifier>{7c0ae14d-7968-4aff-8d57-08719c478b8d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -69,6 +72,15 @@
     <ClInclude Include="Editor\EditorCamera.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\GameObjects\Appearance.h">
+      <Filter>Rendering\GameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\GameObjects\GameObject.h">
+      <Filter>Rendering\GameObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\GameObjects\Transform.h">
+      <Filter>Rendering\GameObjects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -112,6 +124,15 @@
     </ClCompile>
     <ClCompile Include="Editor\EditorCamera.cpp">
       <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\Appearance.cpp">
+      <Filter>Rendering\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\GameObject.cpp">
+      <Filter>Rendering\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameObjects\Transform.cpp">
+      <Filter>Rendering\GameObjects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

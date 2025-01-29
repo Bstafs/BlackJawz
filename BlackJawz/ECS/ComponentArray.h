@@ -4,6 +4,8 @@
 
 namespace BlackJawz::Component
 {
+
+
 	class IComponentArray
 	{
 	public:

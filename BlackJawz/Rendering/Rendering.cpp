@@ -657,6 +657,39 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	return S_OK;
 }
 
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreateCubeGeometry()
+{
+	BlackJawz::Component::Geometry cubeGeometry;
+	cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
+	cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
+	cubeGeometry.IndicesCount = 36;
+	cubeGeometry.vertexBufferOffset = 0;
+	cubeGeometry.vertexBufferStride = sizeof(Vertex);
+	return cubeGeometry;
+}
+
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreateSphereGeometry()
+{
+	BlackJawz::Component::Geometry sphereGeometry;
+	sphereGeometry.pIndexBuffer = pSphereIndexBuffer;
+	sphereGeometry.pVertexBuffer = pSphereVertexBuffer;
+	sphereGeometry.IndicesCount = sphereIndices.size();
+	sphereGeometry.vertexBufferOffset = 0;
+	sphereGeometry.vertexBufferStride = sizeof(Vertex);
+	return sphereGeometry;
+}
+
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreatePlaneGeometry()
+{
+	BlackJawz::Component::Geometry planeGeometry;
+	planeGeometry.pIndexBuffer = pPlaneIndexBuffer;
+	planeGeometry.pVertexBuffer = pPlaneVertexBuffer;
+	planeGeometry.IndicesCount = 6;
+	planeGeometry.vertexBufferOffset = 0;
+	planeGeometry.vertexBufferStride = sizeof(Vertex);
+	return planeGeometry;
+}
+
 void BlackJawz::Rendering::Render::RenderCube(UINT newCount)
 {
 	if (newCount == cubeCount)

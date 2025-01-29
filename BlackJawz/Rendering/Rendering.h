@@ -2,6 +2,7 @@
 #include "../pch.h"
 #include "../Windows/Application.h"
 #include "GameObjects/GameObject.h"
+#include "../ECS/Components.h"
 
 namespace BlackJawz::Application
 {
@@ -52,6 +53,10 @@ namespace BlackJawz::Rendering
 
 		UINT GetPlaneCount() const { return planeCount; }
 		void RenderPlane(UINT NumberOfPlanes);
+
+		BlackJawz::Component::Geometry CreateCubeGeometry();
+		BlackJawz::Component::Geometry CreateSphereGeometry();
+		BlackJawz::Component::Geometry CreatePlaneGeometry();
 
 		void CleanUp();
 

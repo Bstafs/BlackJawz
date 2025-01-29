@@ -93,6 +93,12 @@
     <ClInclude Include="ECS\SystemManager.h">
       <Filter>ECS</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\Components.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\Systems.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -153,6 +159,12 @@
       <Filter>ECS</Filter>
     </ClCompile>
     <ClCompile Include="ECS\SystemManager.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\Components.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\Systems.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
   </ItemGroup>

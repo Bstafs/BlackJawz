@@ -25,6 +25,9 @@
     <Filter Include="Rendering\GameObjects">
       <UniqueIdentifier>{7c0ae14d-7968-4aff-8d57-08719c478b8d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECS">
+      <UniqueIdentifier>{4afe7335-1b6c-4528-85d1-3e1fd3504a5e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -81,6 +84,15 @@
     <ClInclude Include="Rendering\GameObjects\Transform.h">
       <Filter>Rendering\GameObjects</Filter>
     </ClInclude>
+    <ClInclude Include="ECS\EntityManager.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\ComponentArray.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS\SystemManager.h">
+      <Filter>ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -133,6 +145,15 @@
     </ClCompile>
     <ClCompile Include="Rendering\GameObjects\Transform.cpp">
       <Filter>Rendering\GameObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\EntityManager.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\ComponentArray.cpp">
+      <Filter>ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS\SystemManager.cpp">
+      <Filter>ECS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

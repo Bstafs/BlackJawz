@@ -91,6 +91,9 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ECS\ComponentArray.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
+    <ClInclude Include="ECS\SystemManager.h" />
     <ClInclude Include="Editor\Editor.h" />
     <ClInclude Include="Editor\EditorCamera.h" />
     <ClInclude Include="Engine\BlackJawz.h" />
@@ -111,6 +114,15 @@
     <ClInclude Include="Windows\Application.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ECS\ComponentArray.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ECS\EntityManager.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="ECS\SystemManager.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Editor\Editor.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>

@@ -19,6 +19,11 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <queue>
+#include <bitset>
+#include <array>
+#include <unordered_map>
+#include <set>
 
 // Windows
 #include <windows.h>

@@ -2,15 +2,13 @@
 #include "../pch.h"
 #include "ComponentArray.h"
 #include "Components.h"
+#include "SystemManager.h"
 
 namespace BlackJawz::System
 {
-	class TransformSystem
+	class TransformSystem : public System
 	{
 	private:
-		// This will hold the list of entities that have a Transform component
-		std::set<BlackJawz::Entity::Entity> entities;
-
 		// Assuming transformArray is an instance of ComponentArray<Transform>
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& transformArray;
 
@@ -18,6 +16,16 @@ namespace BlackJawz::System
 		// Constructor where transformArray is passed in
 		TransformSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& transformArray)
 			: transformArray(transformArray) {}
+
+		BlackJawz::Component::Transform& GetTransform(BlackJawz::Entity::Entity entity)
+		{
+			return transformArray.GetData(entity);
+		}
+
+		const std::set<BlackJawz::Entity::Entity>& GetEntities() const
+		{
+			return entities;
+		}
 
 		void Update()
 		{
@@ -43,12 +51,9 @@ namespace BlackJawz::System
 		}
 	};
 
-	class AppearanceSystem
+	class AppearanceSystem : public System
 	{
 	private:
-		// Set of entities with an Appearance component
-		std::set<BlackJawz::Entity::Entity> entities;
-
 		// Reference to the Appearance component array
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Appearance>& appearanceArray;
 
@@ -56,6 +61,16 @@ namespace BlackJawz::System
 		// Constructor where appearanceArray is passed in
 		AppearanceSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Appearance>& appearanceArray)
 			: appearanceArray(appearanceArray) {}
+
+		BlackJawz::Component::Appearance& GetAppearance(BlackJawz::Entity::Entity entity)
+		{
+			return appearanceArray.GetData(entity);
+		}
+
+		const std::set<BlackJawz::Entity::Entity>& GetEntities() const
+		{
+			return entities;
+		}
 
 		void Draw(ID3D11DeviceContext* pImmediateContext)
 		{

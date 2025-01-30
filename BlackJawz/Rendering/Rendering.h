@@ -3,6 +3,7 @@
 #include "../Windows/Application.h"
 #include "GameObjects/GameObject.h"
 #include "../ECS/Components.h"
+#include "../ECS/Systems.h"
 
 namespace BlackJawz::Application
 {
@@ -32,27 +33,22 @@ namespace BlackJawz::Rendering
 
 		HRESULT Initialise();
 		void Update();
-		void Draw();
+		void Draw(BlackJawz::System::TransformSystem& transformSystem,
+			BlackJawz::System::AppearanceSystem& appearanceSystem);
 
 		void SetBackGroundColour(float r, float g, float b, float a) { ClearColor[0] = r, ClearColor[1] = g, ClearColor[2] = b, ClearColor[3] = a; };
 		void BeginFrame();
 		void EndFrame();
 
-		void RenderToTexture(); // Render scene to the texture
+		void RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
+			BlackJawz::System::AppearanceSystem& appearanceSystem); // Render scene to the texture
 		ID3D11ShaderResourceView* GetShaderResourceView() const {return  pShaderResourceView.Get();	} // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
 
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
 
-		UINT GetCubeCount() const { return cubeCount; }
-		void RenderCube(UINT NumberOfCubes);
-
-		UINT GetSphereCount() const { return sphereCount; }
-		void RenderSphere(UINT NumberOfSpheres);
-
-		UINT GetPlaneCount() const { return planeCount; }
-		void RenderPlane(UINT NumberOfPlanes);
+		ID3D11DeviceContext* GetDeviceContext() const {	return pImmediateContext.Get();	}
 
 		BlackJawz::Component::Geometry CreateCubeGeometry();
 		BlackJawz::Component::Geometry CreateSphereGeometry();

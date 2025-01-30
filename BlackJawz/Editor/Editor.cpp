@@ -7,6 +7,9 @@ BlackJawz::Editor::Editor::Editor()
 		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
 		1.0f, 1000.0f
 	);
+
+	transformSystem	= systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
+	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
 }
 
 BlackJawz::Editor::Editor::~Editor()
@@ -196,7 +199,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 				objectContextMenuOpened = false; // Ensure no lingering state
 			}
 
-			if (ImGui::MenuItem("Delete")) 			
+			if (ImGui::MenuItem("Delete"))
 			{
 				if (selectedObject >= 0 && selectedObject < entities.size())
 				{
@@ -268,7 +271,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			entityNames[newEntity] = "Cube " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 5.0f);
 			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
@@ -281,6 +284,13 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			signature.set(0);  // Assume component 0 is Transform
 			signature.set(1);  // Assume component 1 is Appearance
 			entityManager.SetSignature(newEntity, signature);
+
+			transformSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
+
+			appearanceSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
+
 		}
 		if (ImGui::MenuItem("Add Sphere"))
 		{
@@ -293,7 +303,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			entityNames[newEntity] = "Sphere " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 5.0f);
 			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
@@ -306,6 +316,13 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			signature.set(0);  // Assume component 0 is Transform
 			signature.set(1);  // Assume component 1 is Appearance
 			entityManager.SetSignature(newEntity, signature);
+
+			transformSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
+
+			appearanceSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
+
 		}
 		if (ImGui::MenuItem("Add Plane"))
 		{
@@ -318,7 +335,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			entityNames[newEntity] = "Plane " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 10.0f);
 			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
@@ -331,6 +348,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			signature.set(0);  // Assume component 0 is Transform
 			signature.set(1);  // Assume component 1 is Appearance
 			entityManager.SetSignature(newEntity, signature);
+
+			transformSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
+
+			appearanceSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
 		}
 
 		ImGui::EndPopup();
@@ -410,7 +433,7 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
 	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
 
-	renderer.RenderToTexture();
+	renderer.RenderToTexture(*transformSystem, *appearanceSystem);
 
 	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
 

@@ -37,14 +37,15 @@ namespace BlackJawz::Editor
 
 		 std::vector<BlackJawz::Entity::Entity> entities;
 		 std::unordered_map<BlackJawz::Entity::Entity, std::string> entityNames;
-		  int selectedObject = -1;
+		 int selectedObject = -1;
 
 		BlackJawz::Entity::EntityManager entityManager;
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform> transformArray;
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Appearance> appearanceArray;
 
 		BlackJawz::System::SystemManager systemManager;
+		std::shared_ptr<BlackJawz::System::TransformSystem> transformSystem;
 
-
+		std::shared_ptr<BlackJawz::System::AppearanceSystem> appearanceSystem;
 	};
 }

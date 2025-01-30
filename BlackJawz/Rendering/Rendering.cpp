@@ -302,13 +302,12 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 	cmdesc.CullMode = D3D11_CULL_NONE;
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, RSCullNone.GetAddressOf());
 
-	D3D11_DEPTH_STENCIL_DESC dssDesc;
-	ZeroMemory(&dssDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	dssDesc.DepthEnable = true;
-	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	D3D11_DEPTH_STENCIL_DESC stencilDesc = {};
+	stencilDesc.DepthEnable = true;
+	stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	stencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
-	pID3D11Device.Get()->CreateDepthStencilState(&dssDesc, DSLessEqual.GetAddressOf());
+	pID3D11Device.Get()->CreateDepthStencilState(&stencilDesc, DSLessEqual.GetAddressOf());
 
 	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
 
@@ -319,10 +318,11 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CCWcullMode.GetAddressOf());
 
 	cmdesc.FrontCounterClockwise = false;
+	cmdesc.DepthClipEnable = false;
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CWcullMode.GetAddressOf());
 
-	pImmediateContext.Get()->RSSetState(CWcullMode.Get());
 	pImmediateContext.Get()->OMSetDepthStencilState(DSLessEqual.Get(), 1);
+	pImmediateContext.Get()->RSSetState(CWcullMode.Get());
 	return hr;
 }
 
@@ -483,7 +483,7 @@ HRESULT BlackJawz::Rendering::Render::InitSphere()
 			vertex.color.x = vertex.position.x / radius; // Red based on x
 			vertex.color.y = vertex.position.y / radius; // Green based on y
 			vertex.color.z = vertex.position.z / radius; // Blue based on z
-
+			vertex.color.w = 1.0f; // Alpha
 			sphereVertices.push_back(vertex);
 		}
 	}
@@ -694,7 +694,7 @@ void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformS
 	Draw(transformSystem, appearanceSystem);
 
 	// Restore the default render target after rendering to texture
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
 }
 
 void BlackJawz::Rendering::Render::Update()
@@ -708,7 +708,7 @@ void BlackJawz::Rendering::Render::BeginFrame()
 	SetBackGroundColour(0.0f, 0.0f, 0.0f, 1.0f);
 	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), ClearColor);
 	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
 }
 
 void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
@@ -749,13 +749,14 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
 
 		// Bind Vertex and Index Buffers
-		pImmediateContext->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
-		pImmediateContext->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
+		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
 		// Draw the entity
-		pImmediateContext->DrawIndexed(geo.IndicesCount, 0, 0);
+		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);
 	}
 }
+
 void BlackJawz::Rendering::Render::EndFrame()
 {
 	ImGui::Render();

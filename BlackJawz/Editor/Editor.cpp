@@ -5,7 +5,7 @@ BlackJawz::Editor::Editor::Editor()
 	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
 		45.0f,
 		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
-		0.1f, 1000.0f
+		0.001f, 10000.0f
 	);
 
 	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
@@ -395,10 +395,6 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 		lastViewportSize = viewportSize;
 	}
 
-	// Update matrices
-	editorCamera->UpdateViewMatrix();
-	editorCamera->UpdateProjectionMatrix();
-
 	// Pass camera matrices to renderer
 	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
 	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
@@ -406,6 +402,10 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	renderer.RenderToTexture(*transformSystem, *appearanceSystem);
 
 	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
+
+	// Update matrices
+	editorCamera->UpdateViewMatrix();
+	editorCamera->UpdateProjectionMatrix();
 
 	ImGui::End(); // End the ImGui viewport window
 	ImGui::PopStyleVar(); // Pop the style variable

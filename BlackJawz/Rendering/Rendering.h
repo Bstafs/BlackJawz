@@ -127,5 +127,7 @@ namespace BlackJawz::Rendering
 		// Camera
 		XMFLOAT4X4 viewMatrix;
 		XMFLOAT4X4 projectionMatrix;
+
+		BlackJawz::System::TransformSystem* trstransformSystem;
 	};
 }

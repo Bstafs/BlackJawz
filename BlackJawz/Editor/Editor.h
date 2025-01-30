@@ -1,8 +1,13 @@
 #pragma once
 #include "../pch.h"
 #include "../Rendering/Rendering.h"
-
 #include "../Editor/EditorCamera.h"
+
+#include "../ECS/EntityManager.h"
+#include "../ECS/Components.h"
+#include "../ECS/Systems.h"
+#include "../ECS/ComponentArray.h"
+#include "../ECS/SystemManager.h"
 
 namespace BlackJawz::Editor
 {
@@ -28,6 +33,19 @@ namespace BlackJawz::Editor
 	private:
 		bool showImGuiDemo = false;
 		std::vector<Object> objects;
-		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;	
+		std::unique_ptr<BlackJawz::EditorCamera::EditorCamera> editorCamera;
+
+		 std::vector<BlackJawz::Entity::Entity> entities;
+		 std::unordered_map<BlackJawz::Entity::Entity, std::string> entityNames;
+		 int selectedObject = -1;
+
+		BlackJawz::Entity::EntityManager entityManager;
+		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform> transformArray;
+		BlackJawz::Component::ComponentArray<BlackJawz::Component::Appearance> appearanceArray;
+
+		BlackJawz::System::SystemManager systemManager;
+		std::shared_ptr<BlackJawz::System::TransformSystem> transformSystem;
+
+		std::shared_ptr<BlackJawz::System::AppearanceSystem> appearanceSystem;
 	};
 }

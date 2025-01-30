@@ -24,6 +24,8 @@
 #include <array>
 #include <unordered_map>
 #include <set>
+#include <typeindex>
+
 
 // Windows
 #include <windows.h>

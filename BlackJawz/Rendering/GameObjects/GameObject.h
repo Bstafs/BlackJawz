@@ -2,6 +2,7 @@
 #include "../../pch.h"
 #include "Transform.h"
 #include "Appearance.h"
+#include "../../ECS/EntityManager.h"
 
 namespace BlackJawz::GameObject
 {

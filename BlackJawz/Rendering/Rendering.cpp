@@ -657,121 +657,41 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	return S_OK;
 }
 
-void BlackJawz::Rendering::Render::RenderCube(UINT newCount)
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreateCubeGeometry()
 {
-	if (newCount == cubeCount)
-		return; // No change needed
-
-	if (newCount > cubeCount)
-	{
-		// Add new cubes
-		for (int i = cubeCount; i < newCount; i++)
-		{
-			BlackJawz::GameObject::Appearance::Geometry cubeGeometry;
-			cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
-			cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
-			cubeGeometry.IndicesCount = 36;
-			cubeGeometry.vertexBufferOffset = 0;
-			cubeGeometry.vertexBufferStride = sizeof(Vertex);
-
-			BlackJawz::GameObject::GameObject* gameObjectCube = new BlackJawz::GameObject::GameObject("Cube " + i, cubeGeometry);
-			gameObjectCube->GetTransform()->SetPosition(-2.0f + (i * 2.0f), 0.0f, 5.0f);
-			gameObjectCube->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
-			gameObjectCube->GetTransform()->SetRotation(15.0f, 15.0f, 0.0f);
-
-			pGameObjectListCube.push_back(gameObjectCube);
-		}
-	}
-	else if (newCount < cubeCount)
-	{
-		// Remove extra cubes
-		for (int i = cubeCount; i > newCount; i--)
-		{
-			delete pGameObjectListCube.back(); // Clean up memory for removed cubes
-			pGameObjectListCube.pop_back();
-		}
-	}
-
-	cubeCount = newCount; // Update the count
+	BlackJawz::Component::Geometry cubeGeometry;
+	cubeGeometry.pIndexBuffer = pCubeIndexBuffer;
+	cubeGeometry.pVertexBuffer = pCubeVertexBuffer;
+	cubeGeometry.IndicesCount = 36;
+	cubeGeometry.vertexBufferOffset = 0;
+	cubeGeometry.vertexBufferStride = sizeof(Vertex);
+	return cubeGeometry;
 }
 
-void BlackJawz::Rendering::Render::RenderSphere(UINT newCount)
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreateSphereGeometry()
 {
-	if (newCount == sphereCount)
-		return; // No change needed
-
-	if (newCount > sphereCount)
-	{
-		// Add new cubes
-		for (int i = sphereCount; i < newCount; i++)
-		{
-			BlackJawz::GameObject::Appearance::Geometry sphereGeometry;
-			sphereGeometry.pIndexBuffer = pSphereIndexBuffer;
-			sphereGeometry.pVertexBuffer = pSphereVertexBuffer;
-			sphereGeometry.IndicesCount = sphereIndices.size();
-			sphereGeometry.vertexBufferOffset = 0;
-			sphereGeometry.vertexBufferStride = sizeof(Vertex);
-
-			BlackJawz::GameObject::GameObject* gameObjectSphere = new BlackJawz::GameObject::GameObject("Sphere " + i, sphereGeometry);
-			gameObjectSphere->GetTransform()->SetPosition(-2.0f + (i * 2.0f), 1.5f, 5.0f);
-			gameObjectSphere->GetTransform()->SetScale(0.5f, 0.5f, 0.5f);
-			gameObjectSphere->GetTransform()->SetRotation(0.0f, 0.0f, 0.0f);
-
-			pGameObjectListSphere.push_back(gameObjectSphere);
-		}
-	}
-	else if (newCount < sphereCount)
-	{
-		// Remove extra cubes
-		for (int i = sphereCount; i > newCount; i--)
-		{
-			delete pGameObjectListSphere.back(); // Clean up memory for removed cubes
-			pGameObjectListSphere.pop_back();
-		}
-	}
-
-	sphereCount = newCount; // Update the count
+	BlackJawz::Component::Geometry sphereGeometry;
+	sphereGeometry.pIndexBuffer = pSphereIndexBuffer;
+	sphereGeometry.pVertexBuffer = pSphereVertexBuffer;
+	sphereGeometry.IndicesCount = sphereIndices.size();
+	sphereGeometry.vertexBufferOffset = 0;
+	sphereGeometry.vertexBufferStride = sizeof(Vertex);
+	return sphereGeometry;
 }
 
-void BlackJawz::Rendering::Render::RenderPlane(UINT newCount)
+BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreatePlaneGeometry()
 {
-	if (newCount == planeCount)
-		return; // No change needed
-
-	if (newCount > planeCount)
-	{
-		// Add new cubes
-		for (int i = planeCount; i < newCount; i++)
-		{
-			BlackJawz::GameObject::Appearance::Geometry planeGeometry;
-			planeGeometry.pIndexBuffer = pPlaneIndexBuffer;
-			planeGeometry.pVertexBuffer = pPlaneVertexBuffer;
-			planeGeometry.IndicesCount = 6;
-			planeGeometry.vertexBufferOffset = 0;
-			planeGeometry.vertexBufferStride = sizeof(Vertex);
-
-			BlackJawz::GameObject::GameObject* gameObjectPlane = new BlackJawz::GameObject::GameObject("Plane " + i, planeGeometry);
-			gameObjectPlane->GetTransform()->SetPosition(0.0f, -3.0f, 10.0f + (i * 20.0f));
-			gameObjectPlane->GetTransform()->SetScale(10.0f, 10.0f, 10.0f);
-			gameObjectPlane->GetTransform()->SetRotation(0.0f, 0.0f, 0.0f);
-
-			pGameObjectListPlane.push_back(gameObjectPlane);
-		}
-	}
-	else if (newCount < planeCount)
-	{
-		// Remove extra cubes
-		for (int i = planeCount; i > newCount; i--)
-		{
-			delete pGameObjectListPlane.back(); // Clean up memory for removed cubes
-			pGameObjectListPlane.pop_back();
-		}
-	}
-
-	planeCount = newCount; // Update the count
+	BlackJawz::Component::Geometry planeGeometry;
+	planeGeometry.pIndexBuffer = pPlaneIndexBuffer;
+	planeGeometry.pVertexBuffer = pPlaneVertexBuffer;
+	planeGeometry.IndicesCount = 6;
+	planeGeometry.vertexBufferOffset = 0;
+	planeGeometry.vertexBufferStride = sizeof(Vertex);
+	return planeGeometry;
 }
 
-void BlackJawz::Rendering::Render::RenderToTexture()
+void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
+	BlackJawz::System::AppearanceSystem& appearanceSystem)
 {
 	// Bind the render target texture
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), nullptr);
@@ -791,7 +711,7 @@ void BlackJawz::Rendering::Render::RenderToTexture()
 	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetTextureView.Get(), ClearColor);
 
 	// Render 3D scene
-	Draw();
+	Draw(transformSystem, appearanceSystem);
 
 	// Restore the default render target after rendering to texture
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
@@ -799,20 +719,7 @@ void BlackJawz::Rendering::Render::RenderToTexture()
 
 void BlackJawz::Rendering::Render::Update()
 {
-	for (auto gameObjects : pGameObjectListCube)
-	{
-		gameObjects->Update();
-	}
 
-	for (auto gameObjects : pGameObjectListSphere)
-	{
-		gameObjects->Update();
-	}
-
-	for (auto gameObjects : pGameObjectListPlane)
-	{
-		gameObjects->Update();
-	}
 }
 
 void BlackJawz::Rendering::Render::BeginFrame()
@@ -824,53 +731,51 @@ void BlackJawz::Rendering::Render::BeginFrame()
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
 }
 
-void BlackJawz::Rendering::Render::Draw()
+void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
+	BlackJawz::System::AppearanceSystem& appearanceSystem)
 {
-	// Scene Render
+	transformSystem.Update();
+
 	ConstantBuffer cb = {};
 
+	// Load View and Projection Matrices
 	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
 
 	cb.View = XMMatrixTranspose(view);
 	cb.Projection = XMMatrixTranspose(projection);
 
-	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
-	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Set shaders and constant buffers
+	pImmediateContext->IASetInputLayout(pInputLayout.Get());
+	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pImmediateContext->VSSetShader(pVertexShader.Get(), nullptr, 0);
+	pImmediateContext->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext->PSSetShader(pPixelShader.Get(), nullptr, 0);
+	pImmediateContext->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-
-	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-
-	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
-
-	for (auto gameObjectsCube : pGameObjectListCube)
+	// Iterate over entities in the Appearance System
+	for (auto entity : appearanceSystem.GetEntities())
 	{
-		cb.World = XMMatrixTranspose(gameObjectsCube->GetTransform()->GetWorldMatrix());
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+		// Get the Transform and Appearance components
+		auto& transform = transformSystem.GetTransform(entity);
+		auto& appearance = appearanceSystem.GetAppearance(entity);
 
-		gameObjectsCube->Draw(pImmediateContext.Get());
-	}
+		// Update world matrix
+		cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
+		pImmediateContext->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
-	for (auto gameObjectsSphere : pGameObjectListSphere)
-	{
-		cb.World = XMMatrixTranspose(gameObjectsSphere->GetTransform()->GetWorldMatrix());
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+		// Get geometry from the Appearance component
+		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
 
-		gameObjectsSphere->Draw(pImmediateContext.Get());
-	}
+		// Bind Vertex and Index Buffers
+		pImmediateContext->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
+		pImmediateContext->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
-	for (auto gameObjectsPlane : pGameObjectListPlane)
-	{
-		cb.World = XMMatrixTranspose(gameObjectsPlane->GetTransform()->GetWorldMatrix());
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
-
-		gameObjectsPlane->Draw(pImmediateContext.Get());
+		// Draw the entity
+		pImmediateContext->DrawIndexed(geo.IndicesCount, 0, 0);
 	}
 }
-
 void BlackJawz::Rendering::Render::EndFrame()
 {
 	ImGui::Render();

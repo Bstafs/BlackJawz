@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../pch.h"
 #include "EntityManager.h"
 
@@ -7,20 +7,23 @@ namespace BlackJawz::System
 	class System 
 	{
 	public:
+        System() = default;
+        virtual ~System() = default; 
 		std::set<BlackJawz::Entity::Entity> entities;
 	};
 
-    class SystemManager {
+    class SystemManager 
+    {
     private:
         std::unordered_map<const char*, std::shared_ptr<System>> systems;
         std::unordered_map<const char*, std::bitset<32>> signatures;
 
     public:
-        template<typename T>
-        std::shared_ptr<T> RegisterSystem() 
+        template<typename T, typename... Args>
+        std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
             const char* typeName = typeid(T).name();
-            auto system = std::make_shared<T>();
+            auto system = std::make_shared<T>(std::forward<Args>(args)...); 
             systems[typeName] = system;
             return system;
         }

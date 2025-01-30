@@ -3,12 +3,12 @@
 BlackJawz::Editor::Editor::Editor()
 {
 	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
-		60.0f,
+		45.0f,
 		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
-		1.0f, 1000.0f
+		0.1f, 1000.0f
 	);
 
-	transformSystem	= systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
+	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
 	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
 }
 
@@ -212,24 +212,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 					// Destroy the entity in ECS (after removing it from the list)
 					entityManager.DestroyEntity(entity);
 
+					transformSystem->RemoveEntity(entity);
+					appearanceSystem->RemoveEntity(entity);
+
 					// Reset the selected object index
 					selectedObject = -1;
 				}
-
-				//// Remove the object from the list
-				//if (objects[i].type == "Cube") 
-				//{
-				//	//renderer.RenderCube(renderer.GetCubeCount() - 1); // Decrease cube count
-				//}
-				//else if (objects[i].type == "Sphere") 
-				//{
-				//	renderer.RenderSphere(renderer.GetSphereCount() - 1); // Decrease sphere count
-				//}
-				//else if (objects[i].type == "Plane") {
-				//	renderer.RenderPlane(renderer.GetPlaneCount() - 1); // Decrease plane count
-				//}
-
-				//objects.erase(objects.begin() + i);
 
 				// Adjust the selected object index
 				if (selectedObject == static_cast<int>(i))
@@ -262,18 +250,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 	{
 		if (ImGui::MenuItem("Add Cube"))
 		{
-			//renderer.RenderCube(renderer.GetCubeCount() + 1);
-			//objects.push_back({ "Cube" + std::to_string(renderer.GetCubeCount()), "Cube"});
-
 			BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
 			entities.push_back(newEntity);
 
 			entityNames[newEntity] = "Cube " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 5.0f);
-			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry cubeGeo = renderer.CreateCubeGeometry();
@@ -294,18 +276,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 		}
 		if (ImGui::MenuItem("Add Sphere"))
 		{
-			//renderer.RenderSphere(renderer.GetSphereCount() + 1);
-			//objects.push_back({ "Sphere" + std::to_string(renderer.GetSphereCount()), "Sphere" });
-
 			BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
 			entities.push_back(newEntity);
 
 			entityNames[newEntity] = "Sphere " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 5.0f);
-			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry sphereGeo = renderer.CreateSphereGeometry();
@@ -326,18 +302,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 		}
 		if (ImGui::MenuItem("Add Plane"))
 		{
-			//renderer.RenderPlane(renderer.GetPlaneCount() + 1);
-			//objects.push_back({ "Plane" + std::to_string(renderer.GetPlaneCount()), "Plane" });
-
 			BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
 			entities.push_back(newEntity);
 
 			entityNames[newEntity] = "Plane " + std::to_string(entities.size());
 
 			BlackJawz::Component::Transform transform;
-			transform.position = DirectX::XMFLOAT3(0.0f, 0.0f, 10.0f);
-			transform.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-			transform.scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry planeGeo = renderer.CreatePlaneGeometry();
@@ -345,8 +315,8 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
-			signature.set(0);  // Assume component 0 is Transform
-			signature.set(1);  // Assume component 1 is Appearance
+			signature.set(0);  // component 0 is Transform
+			signature.set(1);  // component 1 is Appearance
 			entityManager.SetSignature(newEntity, signature);
 
 			transformSystem->AddEntity(newEntity);

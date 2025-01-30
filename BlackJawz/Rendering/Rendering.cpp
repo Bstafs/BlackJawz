@@ -288,22 +288,6 @@ HRESULT BlackJawz::Rendering::Render::InitDepthStencil()
 
 	pID3D11Device.Get()->CreateTexture2D(&depthStencilDesc, nullptr, pDepthStencilBuffer.GetAddressOf());
 	pID3D11Device.Get()->CreateDepthStencilView(pDepthStencilBuffer.Get(), nullptr, pDepthStencilView.GetAddressOf());
-
-	D3D11_DEPTH_STENCIL_DESC dssDesc = {};
-	dssDesc.DepthEnable = true; // Disable depth testing for a simple triangle
-	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dssDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-	ComPtr<ID3D11DepthStencilState> depthStencilState;
-	hr = pID3D11Device->CreateDepthStencilState(&dssDesc, depthStencilState.GetAddressOf());
-	if (FAILED(hr))
-	{
-		OutputDebugStringA("Failed to create depth-stencil state.\n");
-		return hr;
-	}
-
-	pImmediateContext.Get()->OMSetDepthStencilState(depthStencilState.Get(), 1);
-
 	return hr;
 }
 
@@ -335,14 +319,10 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CCWcullMode.GetAddressOf());
 
 	cmdesc.FrontCounterClockwise = false;
-	cmdesc.DepthClipEnable = true;
-	cmdesc.ScissorEnable = false;
-	cmdesc.MultisampleEnable = false;
-	cmdesc.AntialiasedLineEnable = false;
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CWcullMode.GetAddressOf());
 
 	pImmediateContext.Get()->RSSetState(CWcullMode.Get());
-
+	pImmediateContext.Get()->OMSetDepthStencilState(DSLessEqual.Get(), 1);
 	return hr;
 }
 
@@ -746,13 +726,13 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	cb.Projection = XMMatrixTranspose(projection);
 
 	// Set shaders and constant buffers
-	pImmediateContext->IASetInputLayout(pInputLayout.Get());
-	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pImmediateContext->VSSetShader(pVertexShader.Get(), nullptr, 0);
-	pImmediateContext->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-	pImmediateContext->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	pImmediateContext->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-	pImmediateContext->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
+	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
 	// Iterate over entities in the Appearance System
 	for (auto entity : appearanceSystem.GetEntities())
@@ -763,7 +743,7 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 
 		// Update world matrix
 		cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
-		pImmediateContext->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 		// Get geometry from the Appearance component
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();

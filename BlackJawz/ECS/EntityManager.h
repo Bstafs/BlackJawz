@@ -4,7 +4,7 @@
 namespace BlackJawz::Entity
 {
 	using Entity = std::uint32_t;
-	const Entity MAX_ENTITIES = 5000;
+	const Entity MAX_ENTITIES = 50000;
 
 	class EntityManager
 	{

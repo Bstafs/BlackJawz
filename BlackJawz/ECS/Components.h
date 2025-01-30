@@ -30,7 +30,8 @@ namespace BlackJawz::Component
 
         XMMATRIX GetWorldMatrix() const { return XMLoadFloat4x4(&worldMatrix); }
 
-        void UpdateWorldMatrix() {
+        void UpdateWorldMatrix()
+        {
             DirectX::XMMATRIX scaleMatrix = DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
             DirectX::XMMATRIX rotationMatrix = DirectX::XMMatrixRotationX(rotation.x) * DirectX::XMMatrixRotationY(rotation.y) * DirectX::XMMatrixRotationZ(rotation.z);
             DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslation(position.x, position.y, position.z);

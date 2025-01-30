@@ -32,7 +32,7 @@ void BlackJawz::EditorCamera::EditorCamera::UpdateViewMatrix()
 void BlackJawz::EditorCamera::EditorCamera::UpdateProjectionMatrix()
 {
 	XMMATRIX projection = XMMatrixPerspectiveFovLH(
-		XMConvertToRadians(cameraFOV),
+		XM_PIDIV2,
 		cameraAspectRatio,
 		cameraNearPlane,
 		cameraFarPlane

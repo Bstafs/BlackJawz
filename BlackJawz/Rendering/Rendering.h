@@ -1,7 +1,6 @@
 #pragma once
 #include "../pch.h"
 #include "../Windows/Application.h"
-#include "GameObjects/GameObject.h"
 #include "../ECS/Components.h"
 #include "../ECS/Systems.h"
 
@@ -111,24 +110,16 @@ namespace BlackJawz::Rendering
 		// Cube
 		ComPtr<ID3D11Buffer> pCubeVertexBuffer;
 		ComPtr<ID3D11Buffer> pCubeIndexBuffer;
-		UINT cubeCount = 0;
 
 		// Sphere
 		ComPtr<ID3D11Buffer> pSphereVertexBuffer;
 		ComPtr<ID3D11Buffer> pSphereIndexBuffer;
 		std::vector<Vertex> sphereVertices;
 		std::vector<WORD> sphereIndices;
-		UINT sphereCount = 0;
 
 		// Plane
 		ComPtr<ID3D11Buffer> pPlaneVertexBuffer;
 		ComPtr<ID3D11Buffer> pPlaneIndexBuffer;
-		UINT planeCount = 0;
-
-		// Primitive Object Lists
-		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListCube;
-		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListSphere;
-		std::vector<BlackJawz::GameObject::GameObject*> pGameObjectListPlane;
 
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pConstantBuffer;
@@ -136,7 +127,5 @@ namespace BlackJawz::Rendering
 		// Camera
 		XMFLOAT4X4 viewMatrix;
 		XMFLOAT4X4 projectionMatrix;
-
-		XMFLOAT4X4 mWorld;
 	};
 }

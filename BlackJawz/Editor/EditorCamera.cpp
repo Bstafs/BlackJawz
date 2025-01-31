@@ -1,7 +1,7 @@
 #include "EditorCamera.h"
 
 BlackJawz::EditorCamera::EditorCamera::EditorCamera(float fov, float aspectRation, float nearPlane, float farPlane)
-	: cameraPosition({ 0.0f, 0.0f, -5.0f }), 
+	: cameraPosition({ 0.0f, 0.0f, 0.0f }), 
 	  cameraPitch(0.0f), 
 	  cameraYaw(0.0f), 
 	  cameraFOV(fov), 

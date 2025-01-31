@@ -125,9 +125,7 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11Buffer> pConstantBuffer;
 
 		// Camera
-		XMFLOAT4X4 viewMatrix;
-		XMFLOAT4X4 projectionMatrix;
-
-		BlackJawz::System::TransformSystem* trstransformSystem;
+		XMFLOAT4X4 viewMatrix = XMFLOAT4X4();
+		XMFLOAT4X4 projectionMatrix = XMFLOAT4X4();
 	};
 }

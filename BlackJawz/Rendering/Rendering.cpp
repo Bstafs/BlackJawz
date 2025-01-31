@@ -105,14 +105,17 @@ HRESULT BlackJawz::Rendering::Render::InitRenderTargetView()
 
 	// Create a render target texture
 	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = BlackJawz::Application::Application::GetWindowWidth();
-	textureDesc.Height = BlackJawz::Application::Application::GetWindowHeight();
+	textureDesc.Width = renderWidth;
+	textureDesc.Height = renderHeight;
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Count = mSampleCount;
+	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
 
 	hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pRenderTexture.GetAddressOf());
 	if (FAILED(hr)) {
@@ -155,9 +158,12 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Count = mSampleCount;
+	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
 
 	HRESULT hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pRenderTexture.GetAddressOf());
 	if (FAILED(hr)) {
@@ -274,8 +280,8 @@ HRESULT BlackJawz::Rendering::Render::InitDepthStencil()
 	HRESULT hr = S_OK;
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
 
-	depthStencilDesc.Width = BlackJawz::Application::Application::GetWindowWidth();
-	depthStencilDesc.Height = BlackJawz::Application::Application::GetWindowHeight();
+	depthStencilDesc.Width = renderWidth;
+	depthStencilDesc.Height = renderHeight;
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
 	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -295,30 +301,19 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 {
 	// Rasterizer
 	HRESULT hr = S_OK;
-	D3D11_RASTERIZER_DESC cmdesc;
-
-	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
-	cmdesc.FillMode = D3D11_FILL_SOLID;
-	cmdesc.CullMode = D3D11_CULL_NONE;
-	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, RSCullNone.GetAddressOf());
-
+	
 	D3D11_DEPTH_STENCIL_DESC stencilDesc = {};
 	stencilDesc.DepthEnable = true;
 	stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	stencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	stencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
 	pID3D11Device.Get()->CreateDepthStencilState(&stencilDesc, DSLessEqual.GetAddressOf());
 
-	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
-
+	D3D11_RASTERIZER_DESC cmdesc = {};
 	cmdesc.FillMode = D3D11_FILL_SOLID;
 	cmdesc.CullMode = D3D11_CULL_BACK;
-
-	cmdesc.FrontCounterClockwise = true;
-	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CCWcullMode.GetAddressOf());
-
 	cmdesc.FrontCounterClockwise = false;
-	cmdesc.DepthClipEnable = false;
+
 	hr = pID3D11Device.Get()->CreateRasterizerState(&cmdesc, CWcullMode.GetAddressOf());
 
 	pImmediateContext.Get()->OMSetDepthStencilState(DSLessEqual.Get(), 1);
@@ -674,7 +669,7 @@ void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformS
 	BlackJawz::System::AppearanceSystem& appearanceSystem)
 {
 	// Bind the render target texture
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), nullptr);
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), pDepthStencilView.Get());
 
 	// Set up the viewport for rendering to the texture
 	D3D11_VIEWPORT viewport = {};
@@ -694,7 +689,7 @@ void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformS
 	Draw(transformSystem, appearanceSystem);
 
 	// Restore the default render target after rendering to texture
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), nullptr);
 }
 
 void BlackJawz::Rendering::Render::Update()

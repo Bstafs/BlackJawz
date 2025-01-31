@@ -47,5 +47,9 @@ namespace BlackJawz::Editor
 		std::shared_ptr<BlackJawz::System::TransformSystem> transformSystem;
 
 		std::shared_ptr<BlackJawz::System::AppearanceSystem> appearanceSystem;
+
+		XMFLOAT3 cameraPosition;
+		float cameraYaw;
+		float cameraPitch;
 	};
 }

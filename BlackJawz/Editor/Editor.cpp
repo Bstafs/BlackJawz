@@ -8,6 +8,10 @@ BlackJawz::Editor::Editor::Editor()
 		0.001f, 10000.0f
 	);
 
+	cameraPitch = 0.0f;
+	cameraYaw = 0.0f;
+	cameraPosition = XMFLOAT3(0.0f, 0.0f, -5.0f);
+
 	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
 	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
 }
@@ -62,6 +66,12 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 
 	// Begin rendering the main content
 	renderer.BeginFrame();
+
+	editorCamera->SetPosition(cameraPosition);
+	editorCamera->SetRotation(cameraPitch, cameraYaw);
+
+	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
+	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
 
 	// Render editor components
 	MenuBar();          // Menu at the top
@@ -336,13 +346,9 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 {
 	ImGui::Begin("Object Properties");
 
-	XMFLOAT3 posX = editorCamera->GetPosition();
-	float pitch = editorCamera->GetPitch();
-	float yaw = editorCamera->GetYaw();
-
-	ImGui::DragFloat3("Camera Position", &posX.x, 0.1f);
-	ImGui::DragFloat("Camera Pitch", &pitch, 0.01f);
-	ImGui::DragFloat("Camera Yaw", &yaw, 0.01f);
+	ImGui::DragFloat3("Camera Position", &cameraPosition.x, 0.1f);
+	ImGui::DragFloat("Camera Pitch", &cameraPitch, 0.01f);
+	ImGui::DragFloat("Camera Yaw", &cameraYaw, 0.01f);
 
 	if (selectedObject != -1)
 	{
@@ -359,7 +365,7 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			// Display the properties of the Transform component
 			ImGui::DragFloat3("Position", &transform->position.x, 0.1f);
 			ImGui::DragFloat3("Rotation", &transform->rotation.x, 0.1f);
-			ImGui::DragFloat3("Scale", &transform->scale.x, 0.1f);
+			ImGui::DragFloat3("Scale", &transform->scale.x, 0.1f, 0.0f, 100000.0f);
 		}
 
 		if (appearance)
@@ -396,9 +402,6 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	}
 
 	// Pass camera matrices to renderer
-	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
-	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
-
 	renderer.RenderToTexture(*transformSystem, *appearanceSystem);
 
 	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);

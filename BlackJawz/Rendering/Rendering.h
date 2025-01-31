@@ -47,7 +47,7 @@ namespace BlackJawz::Rendering
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
 
-		ID3D11DeviceContext* GetDeviceContext() const {	return pImmediateContext.Get();	}
+		ID3D11DeviceContext* GetDeviceContext()  {	return pImmediateContext.Get();	}
 
 		BlackJawz::Component::Geometry CreateCubeGeometry();
 		BlackJawz::Component::Geometry CreateSphereGeometry();

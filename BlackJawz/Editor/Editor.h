@@ -25,11 +25,15 @@ namespace BlackJawz::Editor
 
 		void Render(Rendering::Render& renderer);
 	private:
-		void MenuBar();
+		void MenuBar(Rendering::Render& renderer);
 		void ContentMenu();
 		void Hierarchy(Rendering::Render& renderer);
 		void ObjectProperties();
 		void ViewPort(Rendering::Render& renderer);
+
+		void SaveScene(const std::string& filename);
+		void LoadScene(const std::string& filename, Rendering::Render& renderer);
+
 	private:
 		bool showImGuiDemo = false;
 		std::vector<Object> objects;

@@ -1,0 +1,31 @@
+namespace ECS;
+
+table Transform {
+  position: [float];  // {x, y, z}
+  rotation: [float];  // {x, y, z}
+  scale: [float];     // {x, y, z}
+  world_matrix: [float]; // 4x4 matrix as a flat array
+}
+
+table Geometry {
+  indices_count: uint32;
+  vertex_buffer_stride: uint32;
+  vertex_buffer_offset: uint32;
+}
+
+table Appearance {
+  geometry: Geometry;
+}
+
+table Entity {
+  id: uint32;
+  name: string;
+  transform: Transform;
+  appearance: Appearance;
+}
+
+table Scene {
+  entities: [Entity];
+}
+
+root_type Scene;

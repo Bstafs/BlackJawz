@@ -48,6 +48,7 @@
 #undef min
 #undef max
 #include <flatbuffers/flatbuffers.h>
+#include "ecs_generated.h"
 
 #endif //PCH_H
 

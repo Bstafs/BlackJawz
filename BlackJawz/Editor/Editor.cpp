@@ -74,7 +74,7 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
 
 	// Render editor components
-	MenuBar();          // Menu at the top
+	MenuBar(renderer);          // Menu at the top
 	ContentMenu();      // Content browser (dockable)
 	Hierarchy(renderer);        // Hierarchy window (dockable)
 	ObjectProperties(); // Object properties (dockable)
@@ -84,30 +84,231 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	renderer.EndFrame();
 }
 
-void BlackJawz::Editor::Editor::MenuBar()
+void BlackJawz::Editor::Editor::SaveScene(const std::string& filename) 
+{
+	// Create a FlatBufferBuilder with an initial size (in bytes)
+	flatbuffers::FlatBufferBuilder builder(2048);
+
+	// This vector will hold the offsets to each serialized Entity.
+	std::vector<flatbuffers::Offset<ECS::Entity>> entityOffsets;
+
+	// Iterate through all entities in the scene.
+	for (auto entity : entities) 
+	{
+		// Get the name from the map
+		auto nameStr = entityNames[entity];
+		auto nameOffset = builder.CreateString(nameStr);
+
+		// --- Serialize the Transform component ---
+		auto& transform = transformArray.GetData(entity);
+		// Update the world matrix (if needed) before serializing.
+		//transform.UpdateWorldMatrix();
+
+		// Create vectors for position, rotation, and scale.
+		auto posVec = builder.CreateVector(std::vector<float>{
+			transform.position.x, transform.position.y, transform.position.z});
+		auto rotVec = builder.CreateVector(std::vector<float>{
+			transform.rotation.x, transform.rotation.y, transform.rotation.z});
+		auto scaleVec = builder.CreateVector(std::vector<float>{
+			transform.scale.x, transform.scale.y, transform.scale.z});
+
+		// Serialize the world matrix as a flat array of 16 floats.
+		float* matrixPtr = reinterpret_cast<float*>(&transform.worldMatrix);
+		auto worldMatrixVec = builder.CreateVector(std::vector<float>(
+			matrixPtr, matrixPtr + 16));
+
+		auto transformOffset = ECS::CreateTransform(builder,
+			posVec, rotVec, scaleVec, worldMatrixVec);
+
+		// --- Serialize the Appearance (and its Geometry) component ---
+		auto& appearanceComp = appearanceArray.GetData(entity);
+		auto geometry = appearanceComp.GetGeometry();
+		auto geometryOffset = ECS::CreateGeometry(builder,
+			geometry.IndicesCount,
+			geometry.vertexBufferStride,
+			geometry.vertexBufferOffset);
+		auto appearanceOffset = ECS::CreateAppearance(builder, geometryOffset);
+
+		// --- Create the Entity ---
+		// Here we assume that CreateEntity takes the following parameters:
+		// (builder, id, name, transform, appearance)
+		// Adjust the parameter order and types according to your generated code.
+		auto entityOffset = ECS::CreateEntity(builder,
+			static_cast<uint32_t>(entity),  // Assuming your entity ID is convertible to uint32_t
+			nameOffset,
+			transformOffset,
+			appearanceOffset);
+
+		// Add the created Entity offset to our vector.
+		entityOffsets.push_back(entityOffset);
+	}
+
+	// Create a FlatBuffers vector from the vector of Entity offsets.
+	auto entitiesVector = builder.CreateVector(entityOffsets);
+
+	// Create the final Scene table with the entities vector.
+	auto sceneOffset = ECS::CreateScene(builder, entitiesVector);
+
+	// Finish the buffer.
+	builder.Finish(sceneOffset);
+
+	uint8_t* buf = builder.GetBufferPointer();
+	int size = builder.GetSize();
+
+	// Write the serialized buffer to a binary file.
+	std::ofstream outFile(filename, std::ios::binary);
+	if (!outFile) {
+		// Handle file open error.
+		return;
+	}
+	outFile.write(reinterpret_cast<char*>(buf), size);
+	outFile.close();
+}
+
+void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering::Render& renderer)
+{
+	// Open the binary file
+	std::ifstream inFile(filename, std::ios::binary);
+	if (!inFile) {
+		// Handle file open error
+		return;
+	}
+
+	// Read the file into a buffer
+	std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+	inFile.close();
+
+	// Get the FlatBuffer scene from the buffer
+	auto scene = ECS::GetScene(buffer.data());
+
+	if (!scene) {
+		// Handle invalid scene data
+		return;
+	}
+
+	// Clear the current scene before loading a new one
+	for (auto entity : entities) 
+	{
+		entityManager.DestroyEntity(entity);
+		transformArray.RemoveData(entity);
+		appearanceArray.RemoveData(entity);
+	}
+	entities.clear();
+	entityNames.clear();
+
+	// Load entities from the FlatBuffer
+	auto entitiesVector = scene->entities();
+	if (!entitiesVector) return;
+
+	for (const auto* entityData : *entitiesVector)
+	{
+		if (!entityData) continue;
+
+		// Create a new entity
+		BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
+		entities.push_back(newEntity);
+
+		// Load entity name
+		if (entityData->name())
+		{
+			entityNames[newEntity] = entityData->name()->str();
+		}
+
+		// Load transform component
+		if (entityData->transform())
+		{
+			auto transformData = entityData->transform();
+
+			BlackJawz::Component::Transform transform;
+			if (transformData->position()) {
+				auto pos = transformData->position();
+				transform.position = { pos->Get(0), pos->Get(1), pos->Get(2) };
+			}
+			if (transformData->rotation()) {
+				auto rot = transformData->rotation();
+				transform.rotation = { rot->Get(0), rot->Get(1), rot->Get(2) };
+			}
+			if (transformData->scale()) {
+				auto scale = transformData->scale();
+				transform.scale = { scale->Get(0), scale->Get(1), scale->Get(2) };
+			}
+
+			// Calculate the world matrix from position, rotation, and scale
+			DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z)
+				* DirectX::XMMatrixRotationRollPitchYaw(transform.rotation.x, transform.rotation.y, transform.rotation.z)
+				* DirectX::XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
+
+			// Store the world matrix in the transform component
+			XMStoreFloat4x4(&transform.worldMatrix, worldMatrix);
+
+			transform.UpdateWorldMatrix();
+
+			transformArray.InsertData(newEntity, transform);
+		}
+
+		// Load appearance component
+		if (entityData->appearance() && entityData->appearance()->geometry()) 
+		{
+			auto geometryData = entityData->appearance()->geometry();
+
+			BlackJawz::Component::Geometry geometry;
+			geometry.IndicesCount = geometryData->indices_count();
+			geometry.vertexBufferStride = geometryData->vertex_buffer_stride();
+			geometry.vertexBufferOffset = geometryData->vertex_buffer_offset();
+
+			BlackJawz::Component::Appearance appearance(geometry);
+			appearanceArray.InsertData(newEntity, appearance);
+		}
+
+		// Set the ECS signature
+		std::bitset<32> signature;
+		signature.set(0); // Assume Transform is component 0
+		signature.set(1); // Assume Appearance is component 1
+		entityManager.SetSignature(newEntity, signature);
+
+		transformSystem->AddEntity(newEntity);
+		systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
+
+		appearanceSystem->AddEntity(newEntity);
+		systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
+	}
+}
+
+void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 {
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("Main Menu"))
 		{
-			if (ImGui::MenuItem("Create New Project"))
+			if (ImGui::MenuItem("Create New Project.."))
 			{
 
 			}
 
-			if (ImGui::MenuItem("Open Project"))
+			if (ImGui::MenuItem("Open Project.."))
 			{
 
 			}
 
-			if (ImGui::MenuItem("Save.."))
+			if (ImGui::MenuItem("Save Project.."))
 			{
 
 			}
 
-			if (ImGui::MenuItem("Save as.."))
+			if (ImGui::MenuItem("Save Project as.."))
 			{
 
+			}
+
+			if (ImGui::MenuItem("Save Scene.."))
+			{
+				SaveScene("ecs.bin");
+			}
+
+
+			if (ImGui::MenuItem("Load Scene.."))
+			{
+				LoadScene("ecs.bin", renderer);
 			}
 
 			if (ImGui::MenuItem("Exit"))

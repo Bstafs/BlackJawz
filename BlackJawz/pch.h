@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <set>
 #include <typeindex>
-
+#include <sstream> 
 
 // Windows
 #include <windows.h>
@@ -43,6 +43,11 @@
 #include "../BlackJawz/ImGui/imgui.h"
 #include "../BlackJawz/ImGui/imgui_impl_dx11.h"
 #include "../BlackJawz/ImGui/imgui_impl_win32.h"
+
+// FlatBuffers
+#undef min
+#undef max
+#include <flatbuffers/flatbuffers.h>
 
 #endif //PCH_H
 

@@ -82,7 +82,7 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11PixelShader> pPixelShader;
 		ComPtr<ID3D11InputLayout> pInputLayout;
 
-		UINT mSampleCount = 4;
+		UINT mSampleCount = 1;
 		float ClearColor[4] = {};
 
 		ComPtr<ID3D11SamplerState> pSamplerLinear;

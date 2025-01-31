@@ -45,7 +45,6 @@ namespace BlackJawz::Editor
 
 		BlackJawz::System::SystemManager systemManager;
 		std::shared_ptr<BlackJawz::System::TransformSystem> transformSystem;
-
 		std::shared_ptr<BlackJawz::System::AppearanceSystem> appearanceSystem;
 
 		XMFLOAT3 cameraPosition;

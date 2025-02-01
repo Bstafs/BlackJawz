@@ -128,7 +128,9 @@ struct Geometry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDICES_COUNT = 4,
     VT_VERTEX_BUFFER_STRIDE = 6,
-    VT_VERTEX_BUFFER_OFFSET = 8
+    VT_VERTEX_BUFFER_OFFSET = 8,
+    VT_VERTEX_BUFFER = 10,
+    VT_INDEX_BUFFER = 12
   };
   uint32_t indices_count() const {
     return GetField<uint32_t>(VT_INDICES_COUNT, 0);
@@ -139,11 +141,21 @@ struct Geometry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint32_t vertex_buffer_offset() const {
     return GetField<uint32_t>(VT_VERTEX_BUFFER_OFFSET, 0);
   }
+  const ::flatbuffers::Vector<uint8_t> *vertex_buffer() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_VERTEX_BUFFER);
+  }
+  const ::flatbuffers::Vector<uint8_t> *index_buffer() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_INDEX_BUFFER);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_INDICES_COUNT, 4) &&
            VerifyField<uint32_t>(verifier, VT_VERTEX_BUFFER_STRIDE, 4) &&
            VerifyField<uint32_t>(verifier, VT_VERTEX_BUFFER_OFFSET, 4) &&
+           VerifyOffset(verifier, VT_VERTEX_BUFFER) &&
+           verifier.VerifyVector(vertex_buffer()) &&
+           VerifyOffset(verifier, VT_INDEX_BUFFER) &&
+           verifier.VerifyVector(index_buffer()) &&
            verifier.EndTable();
   }
 };
@@ -161,6 +173,12 @@ struct GeometryBuilder {
   void add_vertex_buffer_offset(uint32_t vertex_buffer_offset) {
     fbb_.AddElement<uint32_t>(Geometry::VT_VERTEX_BUFFER_OFFSET, vertex_buffer_offset, 0);
   }
+  void add_vertex_buffer(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> vertex_buffer) {
+    fbb_.AddOffset(Geometry::VT_VERTEX_BUFFER, vertex_buffer);
+  }
+  void add_index_buffer(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> index_buffer) {
+    fbb_.AddOffset(Geometry::VT_INDEX_BUFFER, index_buffer);
+  }
   explicit GeometryBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -176,12 +194,34 @@ inline ::flatbuffers::Offset<Geometry> CreateGeometry(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t indices_count = 0,
     uint32_t vertex_buffer_stride = 0,
-    uint32_t vertex_buffer_offset = 0) {
+    uint32_t vertex_buffer_offset = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> vertex_buffer = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> index_buffer = 0) {
   GeometryBuilder builder_(_fbb);
+  builder_.add_index_buffer(index_buffer);
+  builder_.add_vertex_buffer(vertex_buffer);
   builder_.add_vertex_buffer_offset(vertex_buffer_offset);
   builder_.add_vertex_buffer_stride(vertex_buffer_stride);
   builder_.add_indices_count(indices_count);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Geometry> CreateGeometryDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t indices_count = 0,
+    uint32_t vertex_buffer_stride = 0,
+    uint32_t vertex_buffer_offset = 0,
+    const std::vector<uint8_t> *vertex_buffer = nullptr,
+    const std::vector<uint8_t> *index_buffer = nullptr) {
+  auto vertex_buffer__ = vertex_buffer ? _fbb.CreateVector<uint8_t>(*vertex_buffer) : 0;
+  auto index_buffer__ = index_buffer ? _fbb.CreateVector<uint8_t>(*index_buffer) : 0;
+  return ECS::CreateGeometry(
+      _fbb,
+      indices_count,
+      vertex_buffer_stride,
+      vertex_buffer_offset,
+      vertex_buffer__,
+      index_buffer__);
 }
 
 struct Appearance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

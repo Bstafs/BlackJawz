@@ -31,7 +31,9 @@ namespace BlackJawz::Editor
 		void ObjectProperties();
 		void ViewPort(Rendering::Render& renderer);
 
-		void SaveScene(const std::string& filename);
+		void SaveScene(const std::string& filename, Rendering::Render& renderer);
+
+		ComPtr<ID3D11Buffer> CreateBuffer(ID3D11Device* device, const std::vector<uint8_t>& data, UINT stride);
 		void LoadScene(const std::string& filename, Rendering::Render& renderer);
 
 	private:

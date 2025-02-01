@@ -41,13 +41,14 @@ namespace BlackJawz::Rendering
 
 		void RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
 			BlackJawz::System::AppearanceSystem& appearanceSystem); // Render scene to the texture
-		ID3D11ShaderResourceView* GetShaderResourceView() const {return  pShaderResourceView.Get();	} // For ImGui::Image
+		ID3D11ShaderResourceView* GetShaderResourceView() const { return  pShaderResourceView.Get(); } // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
 
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
 
-		ID3D11DeviceContext* GetDeviceContext()  {	return pImmediateContext.Get();	}
+		ID3D11DeviceContext* GetDeviceContext() { return pImmediateContext.Get(); }
+		ID3D11Device* GetDevice() { return pID3D11Device.Get(); }
 
 		BlackJawz::Component::Geometry CreateCubeGeometry();
 		BlackJawz::Component::Geometry CreateSphereGeometry();
@@ -93,13 +94,13 @@ namespace BlackJawz::Rendering
 		// Render To Texture
 		ComPtr<ID3D11Texture2D> pRenderTexture;
 		ComPtr<ID3D11RenderTargetView> pRenderTargetTextureView;
-	    ComPtr<ID3D11ShaderResourceView> pShaderResourceView;
+		ComPtr<ID3D11ShaderResourceView> pShaderResourceView;
 
 		// Depth Buffer
 		ComPtr<ID3D11DepthStencilView> pDepthStencilView;
 		ComPtr<ID3D11Texture2D> pDepthStencilBuffer;
 
-		ComPtr<ID3D11DepthStencilState> DSLessEqual;	
+		ComPtr<ID3D11DepthStencilState> DSLessEqual;
 		ComPtr<ID3D11RasterizerState> RSCullNone;
 		ComPtr<ID3D11RasterizerState> CCWcullMode;
 		ComPtr<ID3D11RasterizerState> CWcullMode;

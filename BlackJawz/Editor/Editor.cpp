@@ -84,10 +84,53 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 	renderer.EndFrame();
 }
 
-void BlackJawz::Editor::Editor::SaveScene(const std::string& filename) 
+// Utility function to extract data from a ID3D11Buffer
+std::vector<uint8_t> ExtractBufferData(
+	ID3D11Device* device,
+	ID3D11DeviceContext* context,
+	ID3D11Buffer* buffer)
+{
+	// Get original buffer description.
+	D3D11_BUFFER_DESC desc;
+	buffer->GetDesc(&desc);
+
+	// Create a staging buffer description.
+	D3D11_BUFFER_DESC stagingDesc = desc;
+	stagingDesc.Usage = D3D11_USAGE_STAGING;
+	stagingDesc.BindFlags = 0;                // No bind flags for staging
+	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+	// Create the staging buffer.
+	ComPtr<ID3D11Buffer> stagingBuffer;
+	HRESULT hr = device->CreateBuffer(&stagingDesc, nullptr, stagingBuffer.GetAddressOf());
+	if (FAILED(hr)) {
+		// Handle error.
+		return {};
+	}
+
+	// Copy the content of the original GPU buffer into the staging buffer.
+	context->CopyResource(stagingBuffer.Get(), buffer);
+
+	// Map the staging buffer for reading.
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	hr = context->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mappedResource);
+	if (FAILED(hr)) {
+		// Handle error.
+		return {};
+	}
+
+	// Copy the data from the mapped staging resource.
+	uint8_t* dataPtr = static_cast<uint8_t*>(mappedResource.pData);
+	std::vector<uint8_t> data(dataPtr, dataPtr + desc.ByteWidth);
+
+	context->Unmap(stagingBuffer.Get(), 0);
+	return data;
+}
+
+void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering::Render& renderer)
 {
 	// Create a FlatBufferBuilder with an initial size (in bytes)
-	flatbuffers::FlatBufferBuilder builder(2048);
+	flatbuffers::FlatBufferBuilder builder(1024);
 
 	// This vector will hold the offsets to each serialized Entity.
 	std::vector<flatbuffers::Offset<ECS::Entity>> entityOffsets;
@@ -102,7 +145,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename)
 		// --- Serialize the Transform component ---
 		auto& transform = transformArray.GetData(entity);
 		// Update the world matrix (if needed) before serializing.
-		//transform.UpdateWorldMatrix();
+		transform.UpdateWorldMatrix();
 
 		// Create vectors for position, rotation, and scale.
 		auto posVec = builder.CreateVector(std::vector<float>{
@@ -123,10 +166,22 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename)
 		// --- Serialize the Appearance (and its Geometry) component ---
 		auto& appearanceComp = appearanceArray.GetData(entity);
 		auto geometry = appearanceComp.GetGeometry();
+
+		// Extract the vertex and index buffer data
+		auto vertexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pVertexBuffer.Get());
+		auto indexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pIndexBuffer.Get());
+
+		// Create FlatBuffers vectors for the vertex and index data
+		auto vertexBufferVec = builder.CreateVector(vertexData);
+		auto indexBufferVec = builder.CreateVector(indexData);
+
 		auto geometryOffset = ECS::CreateGeometry(builder,
 			geometry.IndicesCount,
 			geometry.vertexBufferStride,
-			geometry.vertexBufferOffset);
+			geometry.vertexBufferOffset,
+			vertexBufferVec,
+			indexBufferVec
+			);
 		auto appearanceOffset = ECS::CreateAppearance(builder, geometryOffset);
 
 		// --- Create the Entity ---
@@ -163,6 +218,27 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename)
 	}
 	outFile.write(reinterpret_cast<char*>(buf), size);
 	outFile.close();
+}
+
+ComPtr<ID3D11Buffer> BlackJawz::Editor::Editor::CreateBuffer(ID3D11Device* device, const std::vector<uint8_t>& data, UINT stride)
+{
+	D3D11_BUFFER_DESC bufferDesc = {};
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bufferDesc.ByteWidth = static_cast<UINT>(data.size());
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_INDEX_BUFFER;
+	bufferDesc.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA initData = {};
+	initData.pSysMem = data.data();
+
+	ComPtr<ID3D11Buffer> buffer;
+	HRESULT hr = device->CreateBuffer(&bufferDesc, &initData, buffer.GetAddressOf());
+	if (FAILED(hr)) {
+		// Handle buffer creation error
+		return nullptr;
+	}
+
+	return buffer;
 }
 
 void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering::Render& renderer)
@@ -247,15 +323,29 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 		}
 
 		// Load appearance component
-		if (entityData->appearance() && entityData->appearance()->geometry()) 
+		if (entityData->appearance() && entityData->appearance()->geometry())
 		{
 			auto geometryData = entityData->appearance()->geometry();
 
+			// Create vertex buffer from FlatBuffer data
+			auto vertexData = geometryData->vertex_buffer();
+			std::vector<uint8_t> vertexBufferData(vertexData->begin(), vertexData->end());
+			ComPtr<ID3D11Buffer> vertexBuffer = CreateBuffer(renderer.GetDevice(), vertexBufferData, geometryData->vertex_buffer_stride());
+
+			// Create index buffer from FlatBuffer data
+			auto indexData = geometryData->index_buffer();
+			std::vector<uint8_t> indexBufferData(indexData->begin(), indexData->end());
+			ComPtr<ID3D11Buffer> indexBuffer = CreateBuffer(renderer.GetDevice(), indexBufferData, sizeof(uint32_t)); // Assuming uint32_t indices
+
+			//BlackJawz::Component::Geometry geometry = renderer.CreateCubeGeometry();
 			BlackJawz::Component::Geometry geometry;
 			geometry.IndicesCount = geometryData->indices_count();
 			geometry.vertexBufferStride = geometryData->vertex_buffer_stride();
 			geometry.vertexBufferOffset = geometryData->vertex_buffer_offset();
+			geometry.pVertexBuffer = vertexBuffer;
+			geometry.pIndexBuffer = indexBuffer;
 
+			// Save geometry data and buffers in appearance
 			BlackJawz::Component::Appearance appearance(geometry);
 			appearanceArray.InsertData(newEntity, appearance);
 		}
@@ -302,7 +392,7 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 
 			if (ImGui::MenuItem("Save Scene.."))
 			{
-				SaveScene("ecs.bin");
+				SaveScene("ecs.bin", renderer);
 			}
 
 

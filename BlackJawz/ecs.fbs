@@ -11,6 +11,8 @@ table Geometry {
   indices_count: uint32;
   vertex_buffer_stride: uint32;
   vertex_buffer_offset: uint32;
+  vertex_buffer: [ubyte];
+  index_buffer: [ubyte];
 }
 
 table Appearance {

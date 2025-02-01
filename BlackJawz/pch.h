@@ -26,6 +26,7 @@
 #include <set>
 #include <typeindex>
 #include <sstream> 
+#include <filesystem>
 
 // Windows
 #include <windows.h>

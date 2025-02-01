@@ -369,39 +369,81 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 
 void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 {
+	// Static buffer for the scene file name, scenes are default to save in Scenes/...
+	static char sceneNameBuffer[256] = "ecs.bin";
+
+	// Flags to indicate whether the save or manual load popup should be displayed.
+	static bool openSavePopup = false;
+	static bool openLoadPopup = false;
+
+	// Main Menu Bar
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::BeginMenu("Main Menu"))
+		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem("Create New Project.."))
 			{
-
+				// Create New Project functionality 
 			}
 
 			if (ImGui::MenuItem("Open Project.."))
 			{
-
+				// Open Project functionality 
 			}
 
 			if (ImGui::MenuItem("Save Project.."))
 			{
-
+				// Save Project functionality 
 			}
 
 			if (ImGui::MenuItem("Save Project as.."))
 			{
-
+				// Save Project as functionality 
 			}
 
 			if (ImGui::MenuItem("Save Scene.."))
 			{
-				SaveScene("Scenes/ecs.bin", renderer);
+				openSavePopup = true;
+				strcpy_s(sceneNameBuffer, "ecs.bin"); // Reset to default.
 			}
 
-
-			if (ImGui::MenuItem("Load Scene.."))
+			// Load Scene submenu
+			if (ImGui::BeginMenu("Load Scene"))
 			{
-				LoadScene("Scenes/ecs.bin", renderer);
+				// Submenu: Load From List
+				if (ImGui::BeginMenu("Load From List"))
+				{
+					try
+					{
+						// Iterate over all files in the "Scenes" folder.
+						for (const auto& entry : std::filesystem::directory_iterator("Scenes"))
+						{
+							// Get just the filename (not the full path).
+							std::string fileName = entry.path().filename().string();
+							if (ImGui::MenuItem(fileName.c_str()))
+							{
+								// Build the full path and load the scene.
+								std::string fullPath = "Scenes/" + fileName;
+								LoadScene(fullPath, renderer);
+							}
+						}
+					}
+					catch (const std::filesystem::filesystem_error& e)
+					{
+						// If the folder doesn't exist or there is an error, show an error item.
+						ImGui::MenuItem("Error reading Scenes folder");
+					}
+					ImGui::EndMenu();
+				}
+
+				// Submenu: Load From Name
+				if (ImGui::MenuItem("Load From Name"))
+				{
+					openLoadPopup = true;
+					strcpy_s(sceneNameBuffer, "ecs.bin"); // Reset to default
+				}
+
+				ImGui::EndMenu(); // End Load Scene submenu.
 			}
 
 			if (ImGui::MenuItem("Exit"))
@@ -423,6 +465,61 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 		ImGui::EndMainMenuBar();
 	}
 
+	// --- Save Scene Popup Modal ---
+	if (openSavePopup)
+	{
+		ImGui::OpenPopup("Save Scene");
+		openSavePopup = false;
+	}
+	if (ImGui::BeginPopupModal("Save Scene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Enter file name to save scene (only file name):");
+		// Display "Scenes/" as a non-editable label.
+		ImGui::Text("Scenes/");
+		ImGui::SameLine();
+		ImGui::InputText("##SaveFilename", sceneNameBuffer, IM_ARRAYSIZE(sceneNameBuffer));
+
+		if (ImGui::Button("Save", ImVec2(120, 0)))
+		{
+			// Prepend "Scenes/" to the file name before saving.
+			std::string fullPath = "Scenes/" + std::string(sceneNameBuffer);
+			SaveScene(fullPath, renderer);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
+	// --- Load Scene Popup Modal for Manual Entry (Load From Name) ---
+	if (openLoadPopup)
+	{
+		ImGui::OpenPopup("Load Scene by Name");
+		openLoadPopup = false;
+	}
+	if (ImGui::BeginPopupModal("Load Scene by Name", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Enter file name to load scene (only file name):");
+		ImGui::Text("Scenes/");
+		ImGui::SameLine();
+		ImGui::InputText("##LoadFilename", sceneNameBuffer, IM_ARRAYSIZE(sceneNameBuffer));
+
+		if (ImGui::Button("Load", ImVec2(120, 0)))
+		{
+			std::string fullPath = "Scenes/" + std::string(sceneNameBuffer);
+			LoadScene(fullPath, renderer);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void BlackJawz::Editor::Editor::ContentMenu()

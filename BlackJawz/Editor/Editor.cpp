@@ -85,10 +85,7 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 }
 
 // Utility function to extract data from a ID3D11Buffer
-std::vector<uint8_t> ExtractBufferData(
-	ID3D11Device* device,
-	ID3D11DeviceContext* context,
-	ID3D11Buffer* buffer)
+std::vector<uint8_t> ExtractBufferData(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11Buffer* buffer)
 {
 	// Get original buffer description.
 	D3D11_BUFFER_DESC desc;
@@ -103,7 +100,8 @@ std::vector<uint8_t> ExtractBufferData(
 	// Create the staging buffer.
 	ComPtr<ID3D11Buffer> stagingBuffer;
 	HRESULT hr = device->CreateBuffer(&stagingDesc, nullptr, stagingBuffer.GetAddressOf());
-	if (FAILED(hr)) {
+	if (FAILED(hr)) 
+	{
 		// Handle error.
 		return {};
 	}
@@ -114,7 +112,8 @@ std::vector<uint8_t> ExtractBufferData(
 	// Map the staging buffer for reading.
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	hr = context->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mappedResource);
-	if (FAILED(hr)) {
+	if (FAILED(hr)) 
+	{
 		// Handle error.
 		return {};
 	}
@@ -212,7 +211,8 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 
 	// Write the serialized buffer to a binary file.
 	std::ofstream outFile(filename, std::ios::binary);
-	if (!outFile) {
+	if (!outFile) 
+	{
 		// Handle file open error.
 		return;
 	}
@@ -233,7 +233,8 @@ ComPtr<ID3D11Buffer> BlackJawz::Editor::Editor::CreateBuffer(ID3D11Device* devic
 
 	ComPtr<ID3D11Buffer> buffer;
 	HRESULT hr = device->CreateBuffer(&bufferDesc, &initData, buffer.GetAddressOf());
-	if (FAILED(hr)) {
+	if (FAILED(hr)) 
+	{
 		// Handle buffer creation error
 		return nullptr;
 	}
@@ -245,7 +246,8 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 {
 	// Open the binary file
 	std::ifstream inFile(filename, std::ios::binary);
-	if (!inFile) {
+	if (!inFile) 
+	{
 		// Handle file open error
 		return;
 	}
@@ -257,7 +259,8 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 	// Get the FlatBuffer scene from the buffer
 	auto scene = ECS::GetScene(buffer.data());
 
-	if (!scene) {
+	if (!scene) 
+	{
 		// Handle invalid scene data
 		return;
 	}
@@ -392,13 +395,13 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 
 			if (ImGui::MenuItem("Save Scene.."))
 			{
-				SaveScene("ecs.bin", renderer);
+				SaveScene("Scenes/ecs.bin", renderer);
 			}
 
 
 			if (ImGui::MenuItem("Load Scene.."))
 			{
-				LoadScene("ecs.bin", renderer);
+				LoadScene("Scenes/ecs.bin", renderer);
 			}
 
 			if (ImGui::MenuItem("Exit"))

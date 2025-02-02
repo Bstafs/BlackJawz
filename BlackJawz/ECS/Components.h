@@ -51,7 +51,7 @@ namespace BlackJawz::Component
 		Geometry GetGeometry() const { return objectGeometry; }
 		Geometry objectGeometry;  // Store the geometry data
 
-		ID3D11ShaderResourceView* GetTexture() const { return textureData.Get(); }
+		ComPtr<ID3D11ShaderResourceView> GetTexture() const { return textureData; }
 		ComPtr<ID3D11ShaderResourceView> textureData;
 	};
 }

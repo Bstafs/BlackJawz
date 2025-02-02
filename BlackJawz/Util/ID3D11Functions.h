@@ -6,7 +6,9 @@ ID3D11VertexShader* CreateVertexShader(const WCHAR* szFileName, LPCSTR szEntryPo
 ID3D11PixelShader* CreatePixelShader(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3D11Device* device);
 ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC inputDesc[], UINT numElements, ID3D11Device* device);
 
-// Minimal DDS structures:
+#define DDS_MAGIC 0x20534444 // "DDS " in ASCII
+
+// DDS Pixel Format Structure
 struct DDS_PIXELFORMAT
 {
     uint32_t dwSize;
@@ -19,6 +21,7 @@ struct DDS_PIXELFORMAT
     uint32_t dwABitMask;
 };
 
+// DDS Header Structure
 struct DDS_HEADER
 {
     uint32_t dwSize;
@@ -36,8 +39,4 @@ struct DDS_HEADER
     uint32_t dwCaps4;
     uint32_t dwReserved2;
 };
-
-// DDS magic number
-const uint32_t DDS_MAGIC = 0x20534444; // "DDS "
-
 std::vector<uint8_t> ExtractDDSData(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11ShaderResourceView* srv);

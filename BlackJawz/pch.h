@@ -41,7 +41,7 @@
 #include <DirectXMath.h>
 #include <directxcolors.h>
 #include "Util/ID3D11Functions.h"
-#include "Util/DDSTextureLoader.h"
+#include "Util/DDSTextureLoader11.h"
 
 // ImGui
 #include "../BlackJawz/ImGui/imgui.h"

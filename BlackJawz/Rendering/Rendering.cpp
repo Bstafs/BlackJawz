@@ -241,7 +241,8 @@ HRESULT BlackJawz::Rendering::Render::InitShadersAndInputLayout()
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	// Create the input layout
@@ -302,7 +303,7 @@ HRESULT BlackJawz::Rendering::Render::InitRasterizer()
 {
 	// Rasterizer
 	HRESULT hr = S_OK;
-	
+
 	D3D11_DEPTH_STENCIL_DESC stencilDesc = {};
 	stencilDesc.DepthEnable = true;
 	stencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -367,41 +368,35 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	// Create vertex buffer
 	Vertex vertices[] =
 	{
-		// Top face (Gradient from Red -> Green -> Blue -> Red)
-	{ {-1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ { 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ { 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ {-1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-
-	// Bottom face (Gradient from Red -> Blue -> Green -> Red)
-	{ {-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ { 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ {-1.0f, -1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-
-	// Left face (Gradient from Green -> Blue -> Red -> Green)
-	{ {-1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ {-1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ {-1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ {-1.0f,  1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-
-	// Right face (Gradient from Blue -> Red -> Green -> Blue)
-	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ { 1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ { 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ { 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-
-	// Front face (Gradient from Green -> Blue -> Red -> Green)
-	{ {-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ { 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ { 1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ {-1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-
-	// Back face (Gradient from Blue -> Green -> Red -> Blue)
-	{ {-1.0f, -1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
-	{ { 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f} }, // Green
-	{ { 1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f} }, // Red
-	{ {-1.0f,  1.0f,  1.0f}, {0.0f, 0.0f, 1.0f, 1.0f} }, // Blue
+		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {1.0f, 0.0f} },
+		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
+		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 1.0f} },
+		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f	 }, {1.0f, 1.0f} },
+		 					 						 			   
+		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 0.0f} },
+		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 0.0f} },
+		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
+		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
+		 				 							 			   
+		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
+		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {1.0f, 1.0f} },
+		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {1.0f, 0.0f} },
+		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f   }, {0.0f, 0.0f} },
+		 				 							 			   
+		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
+		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {0.0f, 1.0f} },
+		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
+		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {1.0f, 0.0f} },
+		 					 						 			   
+		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 1.0f} },
+		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 1.0f} },
+		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {1.0f, 0.0f} },
+		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {0.0f, 0.0f} },
+		 					 						 			   
+		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {1.0f, 1.0f} },
+		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {0.0f, 1.0f} },
+		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 0.0f} },
+		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f   }, {1.0f, 0.0f} },
 	};
 
 	D3D11_BUFFER_DESC bd = {};
@@ -472,14 +467,17 @@ HRESULT BlackJawz::Rendering::Render::InitSphere()
 
 			Vertex vertex;
 
-			vertex.position.x = radius * sin(phi) * cos(theta);
-			vertex.position.y = radius * cos(phi);
-			vertex.position.z = radius * sin(phi) * sin(theta);
+			vertex.Position.x = radius * sin(phi) * cos(theta);
+			vertex.Position.y = radius * cos(phi);
+			vertex.Position.z = radius * sin(phi) * sin(theta);
 
-			vertex.color.x = vertex.position.x / radius; // Red based on x
-			vertex.color.y = vertex.position.y / radius; // Green based on y
-			vertex.color.z = vertex.position.z / radius; // Blue based on z
-			vertex.color.w = 1.0f; // Alpha
+			vertex.Normal.x = vertex.Position.x / radius;
+			vertex.Normal.y = vertex.Position.y / radius;
+			vertex.Normal.z = vertex.Position.z / radius;
+
+			vertex.TexC.x = static_cast<float>(j) / numSubdivisions;
+			vertex.TexC.y = static_cast<float>(i) / numSubdivisions;
+
 			sphereVertices.push_back(vertex);
 		}
 	}
@@ -533,10 +531,10 @@ HRESULT BlackJawz::Rendering::Render::InitPlane()
 	// Create vertex buffer
 	Vertex vertices[] =
 	{
-	{ {-1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-	{ {-1.0f, 0.0f, -1.0f  }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-	{ {1.0f, 0.0f, 1.0f}, { 0.0f, 0.0f, 1.0f, 1.0f } },
-	{ {1.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+	{ {-1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
+	{ {-1.0f, 0.0f, -1.0f}, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
+	{ {1.0f, 0.0f, 1.0f  }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
+	{ {1.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} },
 	};
 
 	D3D11_BUFFER_DESC bd = {};
@@ -631,8 +629,6 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	{
 		return E_FAIL;
 	}
-
-	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\floor.dds", nullptr, &textureRV);
 
 	return S_OK;
 }
@@ -735,8 +731,6 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	pImmediateContext.Get()->PSSetShaderResources(0, 1, &textureRV);
-
 	// Iterate over entities in the Appearance System
 	for (auto entity : appearanceSystem.GetEntities())
 	{
@@ -751,9 +745,13 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 		// Get geometry from the Appearance component
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
 
+		ComPtr<ID3D11ShaderResourceView> entityTexture  = appearance.GetTexture();
+
 		// Bind Vertex and Index Buffers
 		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
 		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+		pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
 
 		// Draw the entity
 		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);

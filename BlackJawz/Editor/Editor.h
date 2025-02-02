@@ -9,6 +9,12 @@
 #include "../ECS/ComponentArray.h"
 #include "../ECS/SystemManager.h"
 
+struct TextureData
+{
+	ComPtr<ID3D11ShaderResourceView> srv;
+	std::vector<uint8_t> ddsData;  // Cache of the original DDS file bytes.
+};
+
 namespace BlackJawz::Editor
 {
 	struct Object

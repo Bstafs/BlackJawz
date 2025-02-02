@@ -12,13 +12,15 @@ cbuffer ConstantBuffer : register(b0)
 struct VSInput
 {
     float3 Position : POSITION;
-    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+    float2 TexC : TEXCOORD0;
 };
 
 struct PSInput
 {
     float4 Position : SV_POSITION;
-    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+    float2 TexC : TEXCOORD0;
 };
 
 PSInput MainVS(VSInput input)
@@ -29,12 +31,17 @@ PSInput MainVS(VSInput input)
     output.Position = mul(output.Position, View);
     output.Position = mul(output.Position, Projection);
     
-    output.Color = input.Color; // Pass color to the pixel shader
+    float3 normalW = mul(float4(input.Normal, 0.0f), World).xyz;
+    output.Normal = normalize(normalW);
+    
+    output.TexC = input.TexC;
     
     return output;
 }
 
 float4 PS(PSInput input) : SV_TARGET
 { 
-    return input.Color; // Use color passed from vertex shader
+    float4 diffuseMap = textureDiffuse.Sample(samLinear, input.TexC);
+    
+    return float4(diffuseMap.xyz, 1.0f); 
 }

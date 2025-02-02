@@ -99,7 +99,7 @@
     <ClInclude Include="ECS\Systems.h">
       <Filter>ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Util\DDSTextureLoader11.h">
+    <ClInclude Include="Util\DDSTextureLoader.h">
       <Filter>Util</Filter>
     </ClInclude>
   </ItemGroup>
@@ -170,7 +170,7 @@
     <ClCompile Include="ECS\Systems.cpp">
       <Filter>ECS</Filter>
     </ClCompile>
-    <ClCompile Include="Util\DDSTextureLoader11.cpp">
+    <ClCompile Include="Util\DDSTextureLoader.cpp">
       <Filter>Util</Filter>
     </ClCompile>
   </ItemGroup>

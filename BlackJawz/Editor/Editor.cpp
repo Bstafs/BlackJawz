@@ -102,7 +102,7 @@ std::vector<uint8_t> ExtractBufferData(ID3D11Device* device, ID3D11DeviceContext
 	// Create the staging buffer.
 	ComPtr<ID3D11Buffer> stagingBuffer;
 	HRESULT hr = device->CreateBuffer(&stagingDesc, nullptr, stagingBuffer.GetAddressOf());
-	if (FAILED(hr)) 
+	if (FAILED(hr))
 	{
 		// Handle error.
 		return {};
@@ -114,7 +114,7 @@ std::vector<uint8_t> ExtractBufferData(ID3D11Device* device, ID3D11DeviceContext
 	// Map the staging buffer for reading.
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	hr = context->Map(stagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mappedResource);
-	if (FAILED(hr)) 
+	if (FAILED(hr))
 	{
 		// Handle error.
 		return {};
@@ -128,6 +128,51 @@ std::vector<uint8_t> ExtractBufferData(ID3D11Device* device, ID3D11DeviceContext
 	return data;
 }
 
+void LogDebug(const std::string& message)
+{
+	OutputDebugStringA(message.c_str());
+}
+
+// Reads the entire DDS file into a vector.
+std::vector<uint8_t> LoadDDSFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+	if (!file)
+	{
+		// Handle file error.
+		return {};
+	}
+	return std::vector<uint8_t>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+}
+
+TextureData LoadTexture(const std::string& filename, ID3D11Device* device)
+{
+	TextureData textureData;
+	// Load DDS file data from disk.
+	textureData.ddsData = LoadDDSFile(filename);
+	if (textureData.ddsData.empty())
+	{
+		// Handle error.
+		return textureData;
+	}
+
+	// Create the texture using the memory-based DDSTextureLoader.
+	HRESULT hr = DirectX::CreateDDSTextureFromMemory(
+		device,
+		textureData.ddsData.data(),
+		textureData.ddsData.size(),
+		nullptr,  // Optionally retrieve the underlying texture.
+		&textureData.srv
+	);
+	if (FAILED(hr))
+	{
+		// Handle texture creation error.
+		textureData.ddsData.clear();
+	}
+
+	return textureData;
+}
+
 void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering::Render& renderer)
 {
 	// Create a FlatBufferBuilder with an initial size (in bytes)
@@ -137,7 +182,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 	std::vector<flatbuffers::Offset<ECS::Entity>> entityOffsets;
 
 	// Iterate through all entities in the scene.
-	for (auto entity : entities) 
+	for (auto entity : entities)
 	{
 		// Get the name from the map
 		auto nameStr = entityNames[entity];
@@ -145,7 +190,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 
 		// --- Serialize the Transform component ---
 		auto& transform = transformArray.GetData(entity);
-		// Update the world matrix (if needed) before serializing.
+		// Update the world matrix before serializing.
 		transform.UpdateWorldMatrix();
 
 		// Create vectors for position, rotation, and scale.
@@ -182,7 +227,8 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 			geometry.vertexBufferOffset,
 			vertexBufferVec,
 			indexBufferVec
-			);
+		);
+
 		auto appearanceOffset = ECS::CreateAppearance(builder, geometryOffset);
 
 		// --- Create the Entity ---
@@ -213,7 +259,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 
 	// Write the serialized buffer to a binary file.
 	std::ofstream outFile(filename, std::ios::binary);
-	if (!outFile) 
+	if (!outFile)
 	{
 		// Handle file open error.
 		return;
@@ -235,7 +281,7 @@ ComPtr<ID3D11Buffer> BlackJawz::Editor::Editor::CreateBuffer(ID3D11Device* devic
 
 	ComPtr<ID3D11Buffer> buffer;
 	HRESULT hr = device->CreateBuffer(&bufferDesc, &initData, buffer.GetAddressOf());
-	if (FAILED(hr)) 
+	if (FAILED(hr))
 	{
 		// Handle buffer creation error
 		return nullptr;
@@ -248,7 +294,7 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 {
 	// Open the binary file
 	std::ifstream inFile(filename, std::ios::binary);
-	if (!inFile) 
+	if (!inFile)
 	{
 		// Handle file open error
 		return;
@@ -261,14 +307,14 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 	// Get the FlatBuffer scene from the buffer
 	auto scene = ECS::GetScene(buffer.data());
 
-	if (!scene) 
+	if (!scene)
 	{
 		// Handle invalid scene data
 		return;
 	}
 
 	// Clear the current scene before loading a new one
-	for (auto entity : entities) 
+	for (auto entity : entities)
 	{
 		entityManager.DestroyEntity(entity);
 		transformArray.RemoveData(entity);
@@ -342,7 +388,6 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			std::vector<uint8_t> indexBufferData(indexData->begin(), indexData->end());
 			ComPtr<ID3D11Buffer> indexBuffer = CreateBuffer(renderer.GetDevice(), indexBufferData, sizeof(uint32_t)); // Assuming uint32_t indices
 
-			//BlackJawz::Component::Geometry geometry = renderer.CreateCubeGeometry();
 			BlackJawz::Component::Geometry geometry;
 			geometry.IndicesCount = geometryData->indices_count();
 			geometry.vertexBufferStride = geometryData->vertex_buffer_stride();
@@ -350,8 +395,28 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			geometry.pVertexBuffer = vertexBuffer;
 			geometry.pIndexBuffer = indexBuffer;
 
+			ComPtr<ID3D11ShaderResourceView> textureSRV = nullptr;
+
+			if (entityData->appearance()->texture())
+			{
+				auto textureFB = entityData->appearance()->texture();
+				auto ddsData = textureFB->dds_data();
+				if (ddsData && ddsData->size())
+				{
+					DirectX::CreateDDSTextureFromMemory(
+						renderer.GetDevice(),
+						ddsData->data(),
+						ddsData->size(),
+						nullptr,       // Optionally retrieve the texture pointer if needed
+						&textureSRV
+					);
+				}
+
+
+			}
+
 			// Save geometry data and buffers in appearance
-			BlackJawz::Component::Appearance appearance(geometry);
+			BlackJawz::Component::Appearance appearance(geometry, nullptr);
 			appearanceArray.InsertData(newEntity, appearance);
 		}
 
@@ -406,7 +471,7 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 			if (ImGui::MenuItem("Save Scene.."))
 			{
 				openSavePopup = true;
-				strcpy_s(sceneNameBuffer, "ecs.bin"); // Reset to default.
+				strcpy_s(sceneNameBuffer, "ecs"); // Reset to default.
 			}
 
 			// Load Scene submenu
@@ -484,7 +549,7 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 		if (ImGui::Button("Save", ImVec2(120, 0)))
 		{
 			// Prepend "Scenes/" to the file name before saving.
-			std::string fullPath = "Scenes/" + std::string(sceneNameBuffer);
+			std::string fullPath = "Scenes/" + std::string(sceneNameBuffer) + ".bin";
 			SaveScene(fullPath, renderer);
 			ImGui::CloseCurrentPopup();
 		}
@@ -524,63 +589,64 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 	}
 }
 
-void BlackJawz::Editor::Editor::ContentMenu(Rendering::Render& renderer) 
+void BlackJawz::Editor::Editor::ContentMenu(Rendering::Render& renderer)
 {
-    ImGui::Begin("Content Browser");
+	ImGui::Begin("Content Browser");
 
-    if (!std::filesystem::equivalent(filePath, currentPath) && ImGui::Button("<--")) 
+	if (!std::filesystem::equivalent(filePath, currentPath) && ImGui::Button("<--"))
 	{
-        currentPath = currentPath.parent_path();
-    }
+		currentPath = currentPath.parent_path();
+	}
 
-    ImGui::SameLine();
-    ImGui::TextUnformatted(currentPath.string().c_str());
+	ImGui::SameLine();
+	ImGui::TextUnformatted(currentPath.string().c_str());
 
-    constexpr float padding = 16.0f, thumbnailSize = 64.0f;
-    float cellSize = thumbnailSize + padding;
-    int columnCount = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / cellSize));
+	constexpr float padding = 16.0f, thumbnailSize = 64.0f;
+	float cellSize = thumbnailSize + padding;
+	int columnCount = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / cellSize));
 
-    ImGui::Columns(columnCount, nullptr, false);
+	ImGui::Columns(columnCount, nullptr, false);
 
-    int i = 0;
-    for (auto& entry : std::filesystem::directory_iterator(currentPath))
+	int i = 0;
+	for (auto& entry : std::filesystem::directory_iterator(currentPath))
 	{
-        ImGui::PushID(i++);
+		ImGui::PushID(i++);
 
-        auto path = entry.path();
-        auto relativePath = std::filesystem::relative(path, filePath);
-        auto filename = relativePath.filename().string();
-        auto icon = entry.is_directory() ? directoryIcon : fileIcon;
+		auto path = entry.path();
+		auto relativePath = std::filesystem::relative(path, filePath);
+		auto filename = relativePath.filename().string();
+		auto icon = entry.is_directory() ? directoryIcon : fileIcon;
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        ImGui::ImageButton("##icon", (ImTextureID)icon, { thumbnailSize, thumbnailSize }, { 0,1 }, { 1,0 });
-        ImGui::PopStyleColor();
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::ImageButton("##icon", (ImTextureID)icon, { thumbnailSize, thumbnailSize }, { 0,1 }, { 1,0 });
+		ImGui::PopStyleColor();
 
-        if (ImGui::BeginDragDropSource()) 
+		if (ImGui::BeginDragDropSource())
 		{
-            const wchar_t* contentPath = relativePath.c_str();
-            ImGui::SetDragDropPayload("ContentItem", contentPath, (wcslen(contentPath) + 1) * sizeof(wchar_t));
-            ImGui::EndDragDropSource();
-        }
+			const wchar_t* contentPath = relativePath.c_str();
+			ImGui::SetDragDropPayload("ContentItem", contentPath, (wcslen(contentPath) + 1) * sizeof(wchar_t));
+			ImGui::EndDragDropSource();
+		}
 
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 		{
-            if (entry.is_directory()) 
+			if (entry.is_directory())
 			{
-                currentPath /= path.filename();
-            } else if (entry.is_regular_file() && path.extension() == ".bin") {
-                LoadScene(relativePath.string(), renderer);
-            }
-            std::cout << relativePath << std::endl;
-        }
+				currentPath /= path.filename();
+			}
+			else if (entry.is_regular_file() && path.extension() == ".bin") {
+				LoadScene(relativePath.string(), renderer);
+			}
+			std::cout << relativePath << std::endl;
+		}
 
-        ImGui::TextWrapped(filename.c_str());
-        ImGui::NextColumn();
-        ImGui::PopID();
-    }
+		ImGui::TextWrapped(filename.c_str());
+		ImGui::NextColumn();
+		ImGui::PopID();
+	}
 
-    ImGui::Columns(1);
-    ImGui::End();
+	ImGui::Columns(1);
+	ImGui::End();
 }
 
 void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
@@ -714,7 +780,10 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry cubeGeo = renderer.CreateCubeGeometry();
-			BlackJawz::Component::Appearance appearance(cubeGeo);
+
+			ID3D11ShaderResourceView* tex;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stone.dds", nullptr, &tex);
+			BlackJawz::Component::Appearance appearance(cubeGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
@@ -740,7 +809,11 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry sphereGeo = renderer.CreateSphereGeometry();
-			BlackJawz::Component::Appearance appearance(sphereGeo);
+
+			ID3D11ShaderResourceView* tex;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stone.dds", nullptr, &tex);
+
+			BlackJawz::Component::Appearance appearance(sphereGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
@@ -766,7 +839,11 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Geometry planeGeo = renderer.CreatePlaneGeometry();
-			BlackJawz::Component::Appearance appearance(planeGeo);
+
+			ID3D11ShaderResourceView* tex;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\floor.dds", nullptr, &tex);
+
+			BlackJawz::Component::Appearance appearance(planeGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;

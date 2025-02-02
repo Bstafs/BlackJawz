@@ -15,8 +15,13 @@ table Geometry {
   index_buffer: [ubyte];
 }
 
+table Texture {
+  dds_data: [ubyte];  // Raw bytes of the DDS file
+}
+
 table Appearance {
   geometry: Geometry;
+  texture: Texture;
 }
 
 table Entity {

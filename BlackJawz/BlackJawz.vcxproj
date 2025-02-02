@@ -113,7 +113,7 @@
     <ClInclude Include="Rendering\GameObjects\GameObject.h" />
     <ClInclude Include="Rendering\GameObjects\Transform.h" />
     <ClInclude Include="Rendering\Rendering.h" />
-    <ClInclude Include="Util\DDSTextureLoader11.h" />
+    <ClInclude Include="Util\DDSTextureLoader.h" />
     <ClInclude Include="Util\ID3D11Functions.h" />
     <ClInclude Include="Windows\Application.h" />
   </ItemGroup>
@@ -179,7 +179,7 @@
     <ClCompile Include="Rendering\Rendering.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Util\DDSTextureLoader11.cpp">
+    <ClCompile Include="Util\DDSTextureLoader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Util\ID3D11Functions.cpp">

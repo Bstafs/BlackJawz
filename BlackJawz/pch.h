@@ -27,6 +27,8 @@
 #include <typeindex>
 #include <sstream> 
 #include <filesystem>
+#include <cstdint>
+#include <cstring>
 
 // Windows
 #include <windows.h>
@@ -39,7 +41,7 @@
 #include <DirectXMath.h>
 #include <directxcolors.h>
 #include "Util/ID3D11Functions.h"
-#include "Util/DDSTextureLoader11.h"
+#include "Util/DDSTextureLoader.h"
 
 // ImGui
 #include "../BlackJawz/ImGui/imgui.h"

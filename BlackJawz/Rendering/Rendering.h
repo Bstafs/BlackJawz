@@ -11,8 +11,9 @@ namespace BlackJawz::Application
 
 struct Vertex
 {
-	DirectX::XMFLOAT3 position; // Position of the vertex
-	DirectX::XMFLOAT4 color;    // Color of the vertex
+	DirectX::XMFLOAT3 Position; // Vertex Position
+	DirectX::XMFLOAT3 Normal;   // Vertex Normals
+	DirectX::XMFLOAT2 TexC;     // Vertex Texture Coordinates
 };
 
 struct ConstantBuffer

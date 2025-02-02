@@ -21,6 +21,9 @@ struct TransformBuilder;
 struct Geometry;
 struct GeometryBuilder;
 
+struct Texture;
+struct TextureBuilder;
+
 struct Appearance;
 struct AppearanceBuilder;
 
@@ -224,18 +227,75 @@ inline ::flatbuffers::Offset<Geometry> CreateGeometryDirect(
       index_buffer__);
 }
 
+struct Texture FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef TextureBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_DDS_DATA = 4
+  };
+  const ::flatbuffers::Vector<uint8_t> *dds_data() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_DDS_DATA) &&
+           verifier.VerifyVector(dds_data()) &&
+           verifier.EndTable();
+  }
+};
+
+struct TextureBuilder {
+  typedef Texture Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_dds_data(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA, dds_data);
+  }
+  explicit TextureBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Texture> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Texture>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Texture> CreateTexture(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data = 0) {
+  TextureBuilder builder_(_fbb);
+  builder_.add_dds_data(dds_data);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Texture> CreateTextureDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint8_t> *dds_data = nullptr) {
+  auto dds_data__ = dds_data ? _fbb.CreateVector<uint8_t>(*dds_data) : 0;
+  return ECS::CreateTexture(
+      _fbb,
+      dds_data__);
+}
+
 struct Appearance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef AppearanceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_GEOMETRY = 4
+    VT_GEOMETRY = 4,
+    VT_TEXTURE = 6
   };
   const ECS::Geometry *geometry() const {
     return GetPointer<const ECS::Geometry *>(VT_GEOMETRY);
+  }
+  const ECS::Texture *texture() const {
+    return GetPointer<const ECS::Texture *>(VT_TEXTURE);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_GEOMETRY) &&
            verifier.VerifyTable(geometry()) &&
+           VerifyOffset(verifier, VT_TEXTURE) &&
+           verifier.VerifyTable(texture()) &&
            verifier.EndTable();
   }
 };
@@ -246,6 +306,9 @@ struct AppearanceBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_geometry(::flatbuffers::Offset<ECS::Geometry> geometry) {
     fbb_.AddOffset(Appearance::VT_GEOMETRY, geometry);
+  }
+  void add_texture(::flatbuffers::Offset<ECS::Texture> texture) {
+    fbb_.AddOffset(Appearance::VT_TEXTURE, texture);
   }
   explicit AppearanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -260,8 +323,10 @@ struct AppearanceBuilder {
 
 inline ::flatbuffers::Offset<Appearance> CreateAppearance(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<ECS::Geometry> geometry = 0) {
+    ::flatbuffers::Offset<ECS::Geometry> geometry = 0,
+    ::flatbuffers::Offset<ECS::Texture> texture = 0) {
   AppearanceBuilder builder_(_fbb);
+  builder_.add_texture(texture);
   builder_.add_geometry(geometry);
   return builder_.Finish();
 }

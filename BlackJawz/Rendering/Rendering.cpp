@@ -632,6 +632,7 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\floor.dds", nullptr, &textureRV);
 
 	return S_OK;
 }
@@ -733,6 +734,8 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+
+	pImmediateContext.Get()->PSSetShaderResources(0, 1, &textureRV);
 
 	// Iterate over entities in the Appearance System
 	for (auto entity : appearanceSystem.GetEntities())

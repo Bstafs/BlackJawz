@@ -128,5 +128,7 @@ namespace BlackJawz::Rendering
 		// Camera
 		XMFLOAT4X4 viewMatrix = XMFLOAT4X4();
 		XMFLOAT4X4 projectionMatrix = XMFLOAT4X4();
+
+		ID3D11ShaderResourceView* textureRV;
 	};
 }

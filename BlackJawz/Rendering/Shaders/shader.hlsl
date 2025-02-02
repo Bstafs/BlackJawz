@@ -1,5 +1,7 @@
 SamplerState samLinear : register(s0);
 
+Texture2D textureDiffuse : register(t0);
+
 cbuffer ConstantBuffer : register(b0)
 {
     matrix World;
@@ -33,6 +35,6 @@ PSInput MainVS(VSInput input)
 }
 
 float4 PS(PSInput input) : SV_TARGET
-{
+{ 
     return input.Color; // Use color passed from vertex shader
 }

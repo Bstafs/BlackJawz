@@ -1,6 +1,8 @@
 #include "Editor.h"
 
-BlackJawz::Editor::Editor::Editor()
+extern const std::filesystem::path filePath = std::filesystem::current_path();
+
+BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 {
 	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
 		45.0f,
@@ -75,7 +77,7 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 
 	// Render editor components
 	MenuBar(renderer);          // Menu at the top
-	ContentMenu();      // Content browser (dockable)
+	ContentMenu(renderer);      // Content browser (dockable)
 	Hierarchy(renderer);        // Hierarchy window (dockable)
 	ObjectProperties(); // Object properties (dockable)
 	ViewPort(renderer); // Viewport (dockable)
@@ -411,7 +413,7 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 			if (ImGui::BeginMenu("Load Scene"))
 			{
 				// Submenu: Load From List
-				if (ImGui::BeginMenu("Load From List"))
+				if (ImGui::BeginMenu("Load From Files"))
 				{
 					try
 					{
@@ -437,7 +439,7 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 				}
 
 				// Submenu: Load From Name
-				if (ImGui::MenuItem("Load From Name"))
+				if (ImGui::MenuItem("Load From Filename"))
 				{
 					openLoadPopup = true;
 					strcpy_s(sceneNameBuffer, "ecs.bin"); // Reset to default
@@ -522,11 +524,63 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 	}
 }
 
-void BlackJawz::Editor::Editor::ContentMenu()
+void BlackJawz::Editor::Editor::ContentMenu(Rendering::Render& renderer) 
 {
-	ImGui::Begin("Content Browser");
+    ImGui::Begin("Content Browser");
 
-	ImGui::End();
+    if (!std::filesystem::equivalent(filePath, currentPath) && ImGui::Button("<--")) 
+	{
+        currentPath = currentPath.parent_path();
+    }
+
+    ImGui::SameLine();
+    ImGui::TextUnformatted(currentPath.string().c_str());
+
+    constexpr float padding = 16.0f, thumbnailSize = 64.0f;
+    float cellSize = thumbnailSize + padding;
+    int columnCount = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / cellSize));
+
+    ImGui::Columns(columnCount, nullptr, false);
+
+    int i = 0;
+    for (auto& entry : std::filesystem::directory_iterator(currentPath))
+	{
+        ImGui::PushID(i++);
+
+        auto path = entry.path();
+        auto relativePath = std::filesystem::relative(path, filePath);
+        auto filename = relativePath.filename().string();
+        auto icon = entry.is_directory() ? directoryIcon : fileIcon;
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::ImageButton("##icon", (ImTextureID)icon, { thumbnailSize, thumbnailSize }, { 0,1 }, { 1,0 });
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginDragDropSource()) 
+		{
+            const wchar_t* contentPath = relativePath.c_str();
+            ImGui::SetDragDropPayload("ContentItem", contentPath, (wcslen(contentPath) + 1) * sizeof(wchar_t));
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+            if (entry.is_directory()) 
+			{
+                currentPath /= path.filename();
+            } else if (entry.is_regular_file() && path.extension() == ".bin") {
+                LoadScene(relativePath.string(), renderer);
+            }
+            std::cout << relativePath << std::endl;
+        }
+
+        ImGui::TextWrapped(filename.c_str());
+        ImGui::NextColumn();
+        ImGui::PopID();
+    }
+
+    ImGui::Columns(1);
+    ImGui::End();
 }
 
 void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)

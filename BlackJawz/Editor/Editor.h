@@ -26,7 +26,7 @@ namespace BlackJawz::Editor
 		void Render(Rendering::Render& renderer);
 	private:
 		void MenuBar(Rendering::Render& renderer);
-		void ContentMenu();
+		void ContentMenu(Rendering::Render& renderer);
 		void Hierarchy(Rendering::Render& renderer);
 		void ObjectProperties();
 		void ViewPort(Rendering::Render& renderer);
@@ -56,5 +56,10 @@ namespace BlackJawz::Editor
 		XMFLOAT3 cameraPosition;
 		float cameraYaw;
 		float cameraPitch;
+
+		UINT directoryIcon = 0;
+		UINT fileIcon = 0;
+
+		std::filesystem::path currentPath;
 	};
 }

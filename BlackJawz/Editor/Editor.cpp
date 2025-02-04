@@ -16,6 +16,7 @@ BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 
 	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
 	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
+	lightSystem = systemManager.RegisterSystem<BlackJawz::System::LightSystem>(lightArray);
 }
 
 BlackJawz::Editor::Editor::~Editor()
@@ -821,8 +822,6 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			ID3D11ShaderResourceView* tex;
 			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &tex);
 
-
-
 			BlackJawz::Component::Appearance appearance(sphereGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
 
@@ -872,6 +871,23 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
 			entities.push_back(newEntity);
 			entityNames[newEntity] = "Light " + std::to_string(entities.size());
+
+			BlackJawz::Component::Transform transform;
+			transformArray.InsertData(newEntity, transform);
+
+			BlackJawz::Component::Light light;
+			lightArray.InsertData(newEntity, light);
+
+			std::bitset<32> signature;
+			signature.set(0);  // component 0 is Transform
+			signature.set(2);  // component 2 is Light
+			entityManager.SetSignature(newEntity, signature);
+
+			transformSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
+
+			lightSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::LightSystem>(signature);
 		}
 
 		ImGui::EndPopup();
@@ -890,17 +906,31 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 
 	if (selectedObject != -1)
 	{
-		// Get the selected entity
 		BlackJawz::Entity::Entity entity = entities[selectedObject];
 
-		// Get the Transform component (you can add more components later)
-		BlackJawz::Component::Transform* transform = &transformArray.GetData(entity);
-		BlackJawz::Component::Appearance* appearance = &appearanceArray.GetData(entity);
+		BlackJawz::Component::Transform* transform = entityManager.GetSignature(entity).test(0)
+			? &transformArray.GetData(entity)
+			: nullptr;
+
+		BlackJawz::Component::Appearance* appearance = entityManager.GetSignature(entity).test(1)
+			? &appearanceArray.GetData(entity)
+			: nullptr;
+
+		BlackJawz::Component::Light* light = entityManager.GetSignature(entity).test(2)
+			? &lightArray.GetData(entity)
+			: nullptr;
+
+		ImGui::SeparatorText("Componenet List");
+
+		// Add Component Button
+		if (ImGui::Button("Add Component"))
+		{
+			ImGui::OpenPopup("AddComponentMenu");
+		}
 
 		if (transform)
 		{
 			ImGui::SeparatorText("Transform");
-			// Display the properties of the Transform component
 			ImGui::DragFloat3("Position", &transform->position.x, 0.1f);
 			ImGui::DragFloat3("Rotation", &transform->rotation.x, 0.1f);
 			ImGui::DragFloat3("Scale", &transform->scale.x, 0.1f, 0.0f, 100000.0f);
@@ -915,6 +945,46 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragInt("Indices", &indicesCount, 0.1f);
 			ImGui::DragInt("Stride", &stride, 0.1f);
 			ImGui::DragInt("Offset", &offset, 0.1f);
+		}
+
+		if (light)
+		{
+			ImGui::SeparatorText("Light");
+		}
+
+		// Add Component Menu
+		if (ImGui::BeginPopup("AddComponentMenu"))
+		{
+			if (ImGui::MenuItem("Transform") && !transform)
+			{
+				BlackJawz::Component::Transform newTransform;
+				transformArray.InsertData(entity, newTransform);
+
+				std::bitset<32> signature = entityManager.GetSignature(entity);
+				signature.set(0);
+				entityManager.SetSignature(entity, signature);
+				transformSystem->AddEntity(entity);
+			}
+
+			if (ImGui::MenuItem("Appearance (WIP)") && !appearance)
+			{
+
+			}
+
+			if (ImGui::MenuItem("Light") && !light)
+			{
+				// Add Light Component
+				BlackJawz::Component::Light newLight;
+				lightArray.InsertData(entity, newLight);
+
+				// Update Signature
+				std::bitset<32> signature = entityManager.GetSignature(entity);
+				signature.set(2);
+				entityManager.SetSignature(entity, signature);
+				lightSystem->AddEntity(entity);
+			}
+
+			ImGui::EndPopup();
 		}
 	}
 

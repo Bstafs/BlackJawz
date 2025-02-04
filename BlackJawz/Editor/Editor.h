@@ -50,10 +50,12 @@ namespace BlackJawz::Editor
 		BlackJawz::Entity::EntityManager entityManager;
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform> transformArray;
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Appearance> appearanceArray;
+		BlackJawz::Component::ComponentArray<BlackJawz::Component::Light> lightArray;
 
 		BlackJawz::System::SystemManager systemManager;
 		std::shared_ptr<BlackJawz::System::TransformSystem> transformSystem;
 		std::shared_ptr<BlackJawz::System::AppearanceSystem> appearanceSystem;
+		std::shared_ptr<BlackJawz::System::LightSystem> lightSystem;
 
 		XMFLOAT3 cameraPosition;
 		float cameraYaw;

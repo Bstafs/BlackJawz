@@ -103,4 +103,39 @@ namespace BlackJawz::System
 		}
 	};
 
+	class LightSystem : public System
+	{
+	private:
+		// Reference to the Appearance component array
+		BlackJawz::Component::ComponentArray<BlackJawz::Component::Light>& lightArray;
+
+	public:
+		// Constructor where appearanceArray is passed in
+		LightSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Light>& lArray)
+			: lightArray(lArray) {
+		}
+
+		BlackJawz::Component::Light& GetLight(BlackJawz::Entity::Entity entity)
+		{
+			return lightArray.GetData(entity);
+		}
+
+		const std::set<BlackJawz::Entity::Entity>& GetEntities() const
+		{
+			return entities;
+		}
+
+		// Add an entity to the system
+		void AddEntity(BlackJawz::Entity::Entity entity)
+		{
+			entities.insert(entity);
+		}
+
+		// Remove an entity from the system
+		void RemoveEntity(BlackJawz::Entity::Entity entity)
+		{
+			entities.erase(entity);
+		}
+	};
+
 }

@@ -54,4 +54,10 @@ namespace BlackJawz::Component
 		ComPtr<ID3D11ShaderResourceView> GetTexture() const { return textureData; }
 		ComPtr<ID3D11ShaderResourceView> textureData;
 	};
+
+	struct Light
+	{
+		Light() = default;
+
+	};
 }

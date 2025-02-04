@@ -738,7 +738,7 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 		// Get the Transform and Appearance components
 		auto& transform = transformSystem.GetTransform(entity);
 		auto& appearance = appearanceSystem.GetAppearance(entity);
-		auto& light = appearanceSystem.GetAppearance(entity);
+		auto& light = lightSystem.GetLight(entity);
 
 		// Update world matrix
 		cb.World = XMMatrixTranspose(transform.GetWorldMatrix());

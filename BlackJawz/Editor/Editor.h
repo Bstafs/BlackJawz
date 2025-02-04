@@ -25,6 +25,7 @@ namespace BlackJawz::Editor
 		Editor();
 		~Editor();
 
+		void Initialise(Rendering::Render& renderer);
 		void Render(Rendering::Render& renderer);
 	private:
 		void MenuBar(Rendering::Render& renderer);

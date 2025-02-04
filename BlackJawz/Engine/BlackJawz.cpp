@@ -22,6 +22,8 @@ void BlackJawz::Engine::Setup(HINSTANCE hInstance, int nCmdShow)
 	mWindowsApp->Initialise(hInstance, nCmdShow);
 
 	mRendering->Initialise();
+
+	mEditor->Initialise(*mRendering);
 }
 
 void BlackJawz::Engine::Run()

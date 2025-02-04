@@ -24,6 +24,11 @@ BlackJawz::Editor::Editor::~Editor()
 
 }
 
+void BlackJawz::Editor::Editor::Initialise(Rendering::Render& renderer)
+{
+	LoadScene("Scenes/Default.bin", renderer);
+}
+
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 {
 	// Begin ImGui frame
@@ -381,8 +386,15 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 	for (auto entity : entities)
 	{
 		entityManager.DestroyEntity(entity);
-		transformArray.RemoveData(entity);
-		appearanceArray.RemoveData(entity);
+		entityManager.SetSignature(entity, std::bitset<32>());
+
+		if (transformArray.HasData(entity)) transformArray.RemoveData(entity);
+		if (appearanceArray.HasData(entity)) appearanceArray.RemoveData(entity);
+		if (lightArray.HasData(entity)) lightArray.RemoveData(entity);
+
+		transformSystem->RemoveEntity(entity);
+		appearanceSystem->RemoveEntity(entity);
+		lightSystem->RemoveEntity(entity);
 	}
 	entities.clear();
 	entityNames.clear();
@@ -894,9 +906,6 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 		ImGui::OpenPopup("HierarchyContextMenu"); // Open the Add Object menu
 	}
 
-	int cubeCounter = 0;
-	int sphereCounter = 0;
-
 	// Add a right-click context menu for adding new objects
 	if (ImGui::BeginPopup("HierarchyContextMenu"))
 	{
@@ -927,7 +936,6 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			appearanceSystem->AddEntity(newEntity);
 			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
-
 		}
 		if (ImGui::MenuItem("Add Sphere"))
 		{
@@ -1017,7 +1025,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			std::bitset<32> signature;
 			signature.set(0);  // component 0 is Transform
-			signature.set(2);  // component 2 is Light
+			signature.set(1);  // component 2 is Light
 			entityManager.SetSignature(newEntity, signature);
 
 			transformSystem->AddEntity(newEntity);
@@ -1088,8 +1096,7 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragInt("Offset", &offset, 0.1f);
 
 			if (appearance->HasTexture())
-			{
-				
+			{			
 				ImGui::Text("Diffuse Map:");
 				ImGui::SameLine(115);
 				ImGui::Text("Normal Map:");
@@ -1219,14 +1226,13 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 		lastViewportSize = viewportSize;
 	}
 
-	// Pass camera matrices to renderer
-	renderer.RenderToTexture(*transformSystem, *appearanceSystem, *lightSystem);
-
-	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
-
 	// Update matrices
 	editorCamera->UpdateViewMatrix();
 	editorCamera->UpdateProjectionMatrix();
+
+	renderer.RenderToTexture(*transformSystem, *appearanceSystem, *lightSystem);
+
+	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
 
 	ImGui::End(); // End the ImGui viewport window
 	ImGui::PopStyleVar(); // Pop the style variable

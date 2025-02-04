@@ -25,6 +25,12 @@ namespace BlackJawz::Component
     public:
         void InsertData(BlackJawz::Entity::Entity entity, T component)
         {
+            if (HasData(entity))  // Prevent overwriting an existing entity
+            {
+                componentArray[entityToIndex[entity]] = component;
+                return;
+            }
+
             size_t index = size;
             entityToIndex[entity] = index;
             indexToEntity[index] = entity;
@@ -35,8 +41,21 @@ namespace BlackJawz::Component
         void RemoveData(BlackJawz::Entity::Entity entity)
         {
             size_t index = entityToIndex[entity];
+            size_t lastIndex = size - 1;
+
+            // Move last element into the deleted entity's slot (if not already last)
+            if (index != lastIndex)
+            {
+                componentArray[index] = componentArray[lastIndex];
+
+                BlackJawz::Entity::Entity lastEntity = indexToEntity[lastIndex];
+                entityToIndex[lastEntity] = index;  // Update moved entity's index
+                indexToEntity[index] = lastEntity;
+            }
+
+            // Erase old references
             entityToIndex.erase(entity);
-            indexToEntity.erase(index);
+            indexToEntity.erase(lastIndex);
             --size;
         }
 

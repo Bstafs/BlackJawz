@@ -945,6 +945,19 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragInt("Indices", &indicesCount, 0.1f);
 			ImGui::DragInt("Stride", &stride, 0.1f);
 			ImGui::DragInt("Offset", &offset, 0.1f);
+
+			if (appearance->HasTexture())
+			{
+				
+				ImGui::Text("Diffuse Map:");
+				ImGui::SameLine(115);
+				ImGui::Text("Normal Map:");
+
+				// Here we assume a size of 100x100 pixels, adjust as needed.
+				ImGui::Image((ImTextureID)appearance->GetTexture().Get(), ImVec2(100, 100));
+				ImGui::SameLine();		
+				ImGui::Image((ImTextureID)appearance->GetTexture().Get(), ImVec2(100, 100));
+			}
 		}
 
 		if (light)

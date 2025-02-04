@@ -415,7 +415,7 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			geometry.pVertexBuffer = vertexBuffer;
 			geometry.pIndexBuffer = indexBuffer;
 
-			// Now load the texture SRV from the DDS data in the Appearance
+			// Loading the texture SRV from the DDS data in the Appearance
 			auto textureData = entityData->appearance()->texture();
 
 			// Convert FlatBuffer vector to a standard vector
@@ -790,7 +790,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			BlackJawz::Component::Geometry cubeGeo = renderer.CreateCubeGeometry();
 
 			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stone.dds", nullptr, &tex);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &tex);
 			BlackJawz::Component::Appearance appearance(cubeGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
 
@@ -819,7 +819,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			BlackJawz::Component::Geometry sphereGeo = renderer.CreateSphereGeometry();
 
 			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stone.dds", nullptr, &tex);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &tex);
 
 
 
@@ -851,7 +851,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			BlackJawz::Component::Geometry planeGeo = renderer.CreatePlaneGeometry();
 
 			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\floor.dds", nullptr, &tex);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\tile.dds", nullptr, &tex);
 
 			BlackJawz::Component::Appearance appearance(planeGeo, tex);
 			appearanceArray.InsertData(newEntity, appearance);
@@ -866,6 +866,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			appearanceSystem->AddEntity(newEntity);
 			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
+		}
+		if (ImGui::MenuItem("Add Light"))
+		{
+			BlackJawz::Entity::Entity newEntity = entityManager.CreateEntity();
+			entities.push_back(newEntity);
+			entityNames[newEntity] = "Light " + std::to_string(entities.size());
 		}
 
 		ImGui::EndPopup();

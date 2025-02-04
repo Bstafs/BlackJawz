@@ -130,62 +130,39 @@ std::vector<uint8_t> ExtractBufferData(ID3D11Device* device, ID3D11DeviceContext
 
 std::vector<uint8_t> ExtractTextureData(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11ShaderResourceView* srv)
 {
-	// Get the resource associated with the Shader Resource View (SRV).
+	// Get the resource from the SRV.
 	ComPtr<ID3D11Resource> resource;
 	srv->GetResource(resource.GetAddressOf());
 
-	// Get the resource description.
-	D3D11_RESOURCE_DIMENSION dimension;
-	resource->GetType(&dimension);
-
-	if (dimension != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
-	{
-		// Handle error: Currently only supporting 2D textures
-		return {};
-	}
-
+	// Ensure it's a 2D texture.
 	ComPtr<ID3D11Texture2D> texture;
-	resource.As(&texture);
+	HRESULT hr = resource.As(&texture);
+	if (FAILED(hr))
+		return {};
 
-	// Get the texture description.
-	D3D11_TEXTURE2D_DESC textureDesc;
-	texture->GetDesc(&textureDesc);
-
-	// Create a staging texture description.
-	D3D11_TEXTURE2D_DESC stagingDesc = textureDesc;
-	stagingDesc.Usage = D3D11_USAGE_STAGING;
-	stagingDesc.BindFlags = 0;                 // No bind flags for staging
-	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-	// Create the staging texture.
-	ComPtr<ID3D11Texture2D> stagingTexture;
-	HRESULT hr = device->CreateTexture2D(&stagingDesc, nullptr, stagingTexture.GetAddressOf());
+	// Use DirectXTex to capture the texture
+	DirectX::ScratchImage image;
+	hr = DirectX::CaptureTexture(device, context, texture.Get(), image);
 	if (FAILED(hr))
 	{
-		// Handle error.
+		OutputDebugStringA("Failed to capture texture.\n");
 		return {};
 	}
 
-	// Copy the content of the original texture into the staging texture.
-	context->CopyResource(stagingTexture.Get(), texture.Get());
-
-	// Map the staging texture for reading.
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	hr = context->Map(stagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mappedResource);
+	// Convert the image to a DDS memory buffer
+	DirectX::Blob ddsBlob;
+	hr = DirectX::SaveToDDSMemory(*image.GetImage(0, 0, 0), DirectX::DDS_FLAGS_NONE, ddsBlob);
 	if (FAILED(hr))
 	{
-		// Handle error.
+		OutputDebugStringA("Failed to save DDS to memory.\n");
 		return {};
 	}
 
-	// Copy the data from the mapped staging resource.
-	uint8_t* dataPtr = static_cast<uint8_t*>(mappedResource.pData);
-	std::vector<uint8_t> data(dataPtr, dataPtr + textureDesc.Height * mappedResource.RowPitch);
-
-	// Unmap the staging texture.
-	context->Unmap(stagingTexture.Get(), 0);
-
-	return data;
+	// Return the DDS data as a vector
+	std::vector<uint8_t> ddsData((uint8_t*)ddsBlob.GetBufferPointer(),
+		(uint8_t*)ddsBlob.GetBufferPointer() + ddsBlob.GetBufferSize());
+	//std::vector<uint8_t> ddsData;
+	return ddsData;
 }
 
 void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering::Render& renderer)
@@ -310,12 +287,26 @@ ComPtr<ID3D11Buffer> BlackJawz::Editor::Editor::CreateBuffer(ID3D11Device* devic
 }
 
 // Function to load texture from DDS data into SRV
-ComPtr<ID3D11ShaderResourceView> LoadTextureFromDDSData(ID3D11Device* device, const std::vector<uint8_t>& textureData)
+ComPtr<ID3D11ShaderResourceView> BlackJawz::Editor::Editor::LoadTextureFromDDSData(ID3D11Device* device, const std::vector<uint8_t>& textureData)
 {
+	ComPtr<ID3D11Resource> resource;
 	ComPtr<ID3D11ShaderResourceView> srv;
 
-	DirectX::CreateDDSTextureFromMemory(device, textureData.data(), textureData.size(), nullptr, srv.GetAddressOf());
+	HRESULT hr = CreateDDSTextureFromMemory(
+		device,
+		textureData.data(),
+		textureData.size(),
+		resource.GetAddressOf(),  // Resource is optional but helps debugging
+		srv.ReleaseAndGetAddressOf()
+	);
 
+	if (FAILED(hr))
+	{
+		char errorMsg[256];
+		snprintf(errorMsg, sizeof(errorMsg), "CreateDDSTextureFromMemory failed! HRESULT: 0x%08X\n", hr);
+		OutputDebugStringA(errorMsg);
+		return nullptr;
+	}
 
 	return srv;
 }
@@ -426,13 +417,12 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			geometry.pIndexBuffer = indexBuffer;
 
 			// Now load the texture SRV from the DDS data in the Appearance
-			ComPtr<ID3D11ShaderResourceView> textureSRV = nullptr;
 			auto textureData = entityData->appearance()->texture();
-			if (textureData && textureData->dds_data())
-			{
-				std::vector<uint8_t> textureBufferData(textureData->dds_data()->begin(), textureData->dds_data()->end());
-				textureSRV = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferData);
-			}
+
+			// Convert FlatBuffer vector to a standard vector
+			std::vector<uint8_t> textureBufferData(textureData->dds_data()->begin(), textureData->dds_data()->end());
+
+			ComPtr<ID3D11ShaderResourceView> textureSRV = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferData);
 
 			// Save geometry data and buffers in appearance
 			BlackJawz::Component::Appearance appearance(geometry, textureSRV.Get());

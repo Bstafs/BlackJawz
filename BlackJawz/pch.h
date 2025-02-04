@@ -54,6 +54,8 @@
 #include <flatbuffers/flatbuffers.h>
 #include "ecs_generated.h"
 
+#include "../DirectXTex/DirectXTex.h"
+
 #endif //PCH_H
 
 using Microsoft::WRL::ComPtr;

@@ -59,7 +59,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\BlackJawz\Engine;$(SolutionDir)\Dependencies\lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\BlackJawz\Engine;$(SolutionDir)\Dependencies\lib;$(SolutionDir)\DirectXTex</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -103,6 +103,9 @@
   <ItemGroup>
     <ProjectReference Include="..\BlackJawz\BlackJawz.vcxproj">
       <Project>{1f1b8976-92bd-4a9e-afdd-766919d2aca0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

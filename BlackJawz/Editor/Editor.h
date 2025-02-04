@@ -37,7 +37,7 @@ namespace BlackJawz::Editor
 
 		ComPtr<ID3D11Buffer> CreateBuffer(ID3D11Device* device, const std::vector<uint8_t>& data, UINT stride);
 		void LoadScene(const std::string& filename, Rendering::Render& renderer);
-
+		ComPtr<ID3D11ShaderResourceView> LoadTextureFromDDSData(ID3D11Device* device, const std::vector<uint8_t>& textureData);
 	private:
 		bool showImGuiDemo = false;
 		std::vector<Object> objects;

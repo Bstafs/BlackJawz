@@ -161,7 +161,6 @@ std::vector<uint8_t> ExtractTextureData(ID3D11Device* device, ID3D11DeviceContex
 	// Return the DDS data as a vector
 	std::vector<uint8_t> ddsData((uint8_t*)ddsBlob.GetBufferPointer(),
 		(uint8_t*)ddsBlob.GetBufferPointer() + ddsBlob.GetBufferSize());
-	//std::vector<uint8_t> ddsData;
 	return ddsData;
 }
 

@@ -34,14 +34,14 @@ namespace BlackJawz::Rendering
 		HRESULT Initialise();
 		void Update();
 		void Draw(BlackJawz::System::TransformSystem& transformSystem,
-			BlackJawz::System::AppearanceSystem& appearanceSystem);
+			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem);
 
 		void SetBackGroundColour(float r, float g, float b, float a) { ClearColor[0] = r, ClearColor[1] = g, ClearColor[2] = b, ClearColor[3] = a; };
 		void BeginFrame();
 		void EndFrame();
 
 		void RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
-			BlackJawz::System::AppearanceSystem& appearanceSystem); // Render scene to the texture
+			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem); // Render scene to the texture
 		ID3D11ShaderResourceView* GetShaderResourceView() const { return  pShaderResourceView.Get(); } // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
 

@@ -16,7 +16,7 @@ BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 
 	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
 	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
-	lightSystem = systemManager.RegisterSystem<BlackJawz::System::LightSystem>(lightArray);
+	lightSystem = systemManager.RegisterSystem<BlackJawz::System::LightSystem>(lightArray, transformArray);
 }
 
 BlackJawz::Editor::Editor::~Editor()
@@ -181,51 +181,93 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 		auto nameOffset = builder.CreateString(nameStr);
 
 		// --- Serialize the Transform component ---
-		auto& transform = transformArray.GetData(entity);
-		// Update the world matrix before serializing.
-		transform.UpdateWorldMatrix();
+		flatbuffers::Offset<ECS::Transform> transformOffset = 0;
+		if (transformArray.HasData(entity))
+		{
+			auto& transform = transformArray.GetData(entity);
+			// Update the world matrix before serializing.
+			transform.UpdateWorldMatrix();
 
-		// Create vectors for position, rotation, and scale.
-		auto posVec = builder.CreateVector(std::vector<float>{
-			transform.position.x, transform.position.y, transform.position.z});
-		auto rotVec = builder.CreateVector(std::vector<float>{
-			transform.rotation.x, transform.rotation.y, transform.rotation.z});
-		auto scaleVec = builder.CreateVector(std::vector<float>{
-			transform.scale.x, transform.scale.y, transform.scale.z});
+			// Create vectors for position, rotation, and scale.
+			auto posVec = builder.CreateVector(std::vector<float>{
+				transform.position.x, transform.position.y, transform.position.z});
+			auto rotVec = builder.CreateVector(std::vector<float>{
+				transform.rotation.x, transform.rotation.y, transform.rotation.z});
+			auto scaleVec = builder.CreateVector(std::vector<float>{
+				transform.scale.x, transform.scale.y, transform.scale.z});
 
-		// Serialize the world matrix as a flat array of 16 floats.
-		float* matrixPtr = reinterpret_cast<float*>(&transform.worldMatrix);
-		auto worldMatrixVec = builder.CreateVector(std::vector<float>(
-			matrixPtr, matrixPtr + 16));
+			// Serialize the world matrix as a flat array of 16 floats.
+			float* matrixPtr = reinterpret_cast<float*>(&transform.worldMatrix);
+			auto worldMatrixVec = builder.CreateVector(std::vector<float>(
+				matrixPtr, matrixPtr + 16));
 
-		auto transformOffset = ECS::CreateTransform(builder,
-			posVec, rotVec, scaleVec, worldMatrixVec);
+			 transformOffset = ECS::CreateTransform(builder,
+				posVec, rotVec, scaleVec, worldMatrixVec);
+		}
 
 		// --- Serialize the Appearance (and its Geometry) component ---
-		auto& appearanceComp = appearanceArray.GetData(entity);
-		auto geometry = appearanceComp.GetGeometry();
+		flatbuffers::Offset<ECS::Appearance> appearanceOffset = 0;
+		if (appearanceArray.HasData(entity))
+		{
+			auto& appearanceComp = appearanceArray.GetData(entity);
+			auto geometry = appearanceComp.GetGeometry();
 
-		// Extract the vertex and index buffer data
-		auto vertexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pVertexBuffer.Get());
-		auto indexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pIndexBuffer.Get());
+			// Extract the vertex and index buffer data
+			auto vertexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pVertexBuffer.Get());
+			auto indexData = ExtractBufferData(renderer.GetDevice(), renderer.GetDeviceContext(), geometry.pIndexBuffer.Get());
 
-		// Create FlatBuffers vectors for the vertex and index data
-		auto vertexBufferVec = builder.CreateVector(vertexData);
-		auto indexBufferVec = builder.CreateVector(indexData);
+			// Create FlatBuffers vectors for the vertex and index data
+			auto vertexBufferVec = builder.CreateVector(vertexData);
+			auto indexBufferVec = builder.CreateVector(indexData);
 
-		auto geometryOffset = ECS::CreateGeometry(builder,
-			geometry.IndicesCount,
-			geometry.vertexBufferStride,
-			geometry.vertexBufferOffset,
-			vertexBufferVec,
-			indexBufferVec
-		);
+			auto geometryOffset = ECS::CreateGeometry(builder,
+				geometry.IndicesCount,
+				geometry.vertexBufferStride,
+				geometry.vertexBufferOffset,
+				vertexBufferVec,
+				indexBufferVec
+			);
 
-		auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTexture().Get());
-		auto textureVec = builder.CreateVector(textureData);
-		auto textureOffset = ECS::CreateTexture(builder, textureVec);
+			auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTexture().Get());
+			auto textureVec = builder.CreateVector(textureData);
+			auto textureOffset = ECS::CreateTexture(builder, textureVec);
 
-		auto appearanceOffset = ECS::CreateAppearance(builder, geometryOffset, textureOffset);
+			appearanceOffset = ECS::CreateAppearance(builder, geometryOffset, textureOffset);
+		}
+		// --- Serialize Light Component (if entity has light) ---
+		flatbuffers::Offset<ECS::Light> lightOffset = 0;
+		if (lightArray.HasData(entity))
+		{
+			auto& light = lightArray.GetData(entity);
+
+			auto diffuseVec = builder.CreateVector(std::vector<float>{
+				light.DiffuseLight.x, light.DiffuseLight.y, light.DiffuseLight.z, light.DiffuseLight.w });
+
+			auto ambientVec = builder.CreateVector(std::vector<float>{
+				light.AmbientLight.x, light.AmbientLight.y, light.AmbientLight.z, light.AmbientLight.w });
+
+			auto specularVec = builder.CreateVector(std::vector<float>{
+				light.SpecularLight.x, light.SpecularLight.y, light.SpecularLight.z, light.SpecularLight.w });
+
+			auto attenuationVec = builder.CreateVector(std::vector<float>{
+				light.Attenuation.x, light.Attenuation.y, light.Attenuation.z });
+
+			auto directionVec = builder.CreateVector(std::vector<float>{
+				light.Direction.x, light.Direction.y, light.Direction.z });
+
+			lightOffset = ECS::CreateLight(builder,
+				static_cast<ECS::LightType>(light.Type),
+				diffuseVec,
+				ambientVec,
+				specularVec,
+				light.SpecularPower,
+				light.Range,
+				directionVec,
+				light.Intensity,
+				attenuationVec,
+				light.SpotInnerCone,
+				light.SpotOuterCone);
+		}
 
 		// --- Create the Entity ---
 		// Here we assume that CreateEntity takes the following parameters:
@@ -235,7 +277,8 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 			static_cast<uint32_t>(entity),  // Assuming your entity ID is convertible to uint32_t
 			nameOffset,
 			transformOffset,
-			appearanceOffset);
+			appearanceOffset,
+			lightOffset);
 
 		// Add the created Entity offset to our vector.
 		entityOffsets.push_back(entityOffset);
@@ -362,6 +405,9 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			entityNames[newEntity] = entityData->name()->str();
 		}
 
+		// Set the ECS signature
+		std::bitset<32> signature;
+
 		// Load transform component
 		if (entityData->transform())
 		{
@@ -385,13 +431,17 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			DirectX::XMMATRIX worldMatrix = DirectX::XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z)
 				* DirectX::XMMatrixRotationRollPitchYaw(transform.rotation.x, transform.rotation.y, transform.rotation.z)
 				* DirectX::XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
-
+			
 			// Store the world matrix in the transform component
 			XMStoreFloat4x4(&transform.worldMatrix, worldMatrix);
 
 			transform.UpdateWorldMatrix();
 
 			transformArray.InsertData(newEntity, transform);
+			signature.set(0); // Assume Transform is component 0
+
+			transformSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
 		}
 
 		// Load appearance component
@@ -427,19 +477,91 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			// Save geometry data and buffers in appearance
 			BlackJawz::Component::Appearance appearance(geometry, textureSRV.Get());
 			appearanceArray.InsertData(newEntity, appearance);
+
+			signature.set(1); // Assume Appearance is component 1
+			appearanceSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
 		}
 
-		// Set the ECS signature
-		std::bitset<32> signature;
-		signature.set(0); // Assume Transform is component 0
-		signature.set(1); // Assume Appearance is component 1
+		if (entityData->light())
+		{
+			auto lightData = entityData->light();
+
+			BlackJawz::Component::Light light;
+
+			if (lightData->type())
+			{
+				auto type = lightData->type();
+				light.Type = static_cast<BlackJawz::Component::LightType>(type);
+			}
+			if (lightData->diffuse_light())
+			{
+				auto diff = lightData->diffuse_light();
+				light.DiffuseLight = { diff->Get(0),diff->Get(1), diff->Get(2), diff->Get(3) };
+			}
+			if (lightData->ambient_light()) 
+			{
+				auto ambient = lightData->ambient_light();
+				light.AmbientLight = { ambient->Get(0), ambient->Get(1), ambient->Get(2), ambient->Get(3) };
+			}
+			if (lightData->specular_light()) 
+			{
+				auto spec = lightData->specular_light();
+				light.SpecularLight = { spec->Get(0), spec->Get(1), spec->Get(2), spec->Get(3) };
+			}
+			if (lightData->specular_power())
+			{
+				auto specPow = lightData->specular_power();
+				light.SpecularPower = specPow;
+			}
+
+
+			if (light.Type == BlackJawz::Component::LightType::Point || light.Type == BlackJawz::Component::LightType::Spot) 
+			{
+				if (lightData->range()) 
+				{
+					light.Range = lightData->range();  
+				}
+				if (lightData->attenuation())
+				{
+					auto atten = lightData->attenuation();
+					light.Attenuation = { atten->Get(0), atten->Get(1), atten->Get(2) };
+				}
+			}
+
+			if (light.Type == BlackJawz::Component::LightType::Directional || light.Type == BlackJawz::Component::LightType::Spot) 
+			{
+				if (lightData->direction()) 
+				{
+					auto dir = lightData->direction();
+					light.Direction = { dir->Get(0), dir->Get(1), dir->Get(2) };  
+				}
+				if (lightData->intensity())
+				{
+					auto intens = lightData->intensity();
+					light.Intensity = intens;
+				}
+			}
+
+			// For spotlights, set the cone angles
+			if (light.Type == BlackJawz::Component::LightType::Spot) 
+			{
+				if (lightData->spot_inner_cone()) {
+					light.SpotInnerCone = lightData->spot_inner_cone();
+				}
+				if (lightData->spot_outer_cone()) {
+					light.SpotOuterCone = lightData->spot_outer_cone();
+				}
+			}
+
+			lightArray.InsertData(newEntity, light);
+
+			signature.set(2); // Assume Light is component 2
+			lightSystem->AddEntity(newEntity);
+			systemManager.SetSignature<BlackJawz::System::LightSystem>(signature);
+		}
+
 		entityManager.SetSignature(newEntity, signature);
-
-		transformSystem->AddEntity(newEntity);
-		systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
-
-		appearanceSystem->AddEntity(newEntity);
-		systemManager.SetSignature<BlackJawz::System::AppearanceSystem>(signature);
 	}
 }
 
@@ -876,6 +998,21 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Light light;
+			light.Type = BlackJawz::Component::LightType::Spot;
+
+			// Light 
+			light.DiffuseLight = { 1.0f, 0.8f, 0.6f, 1.0f };
+			light.AmbientLight = { 0.2f, 0.1f, 0.1f, 1.0f };
+			light.SpecularLight = { 1.0f, 0.9f, 0.7f, 1.0f };
+		
+			light.Range = 15.0f; // Maximum reach
+			light.Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
+
+			light.Direction = { 0.0f, 0.0f, 0.0f };
+			light.Intensity = 0.0f;
+			light.SpotInnerCone = 0.0f;
+			light.SpotOuterCone = 0.0f;
+
 			lightArray.InsertData(newEntity, light);
 
 			std::bitset<32> signature;
@@ -886,8 +1023,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformSystem->AddEntity(newEntity);
 			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
 
-			lightSystem->AddEntity(newEntity);
-			systemManager.SetSignature<BlackJawz::System::LightSystem>(signature);
+
+			if (transformArray.HasData(newEntity))
+			{
+				lightSystem->AddEntity(newEntity);
+			    systemManager.SetSignature<BlackJawz::System::LightSystem>(signature);
+			}
 		}
 
 		ImGui::EndPopup();
@@ -963,6 +1104,62 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 		if (light)
 		{
 			ImGui::SeparatorText("Light");
+
+			// Light Type Selection
+			const char* lightTypes[] = { "Point", "Directional", "Spot" };
+			int currentType = static_cast<int>(light->Type);
+
+			if (ImGui::Combo("Light Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
+			{
+				light->Type = static_cast<BlackJawz::Component::LightType>(currentType);
+			}
+
+			ImGui::DragFloat4("Diffuse Light", &light->DiffuseLight.x, 0.1f);
+			ImGui::DragFloat4("Ambient Light", &light->AmbientLight.x, 0.1f);
+			ImGui::DragFloat4("Specular Light", &light->SpecularLight.x, 0.1f);
+
+			ImGui::DragFloat("Specular Power", &light->SpecularPower, 0.1f);
+
+			if (light->Type == BlackJawz::Component::LightType::Point)
+			{			
+				light->Range = 15.0f; // Maximum reach
+				light->Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
+				light->Direction = { 0.0f, 0.0f, 0.0f };
+				light->Intensity = 0.0f;
+				light->SpotInnerCone = 0.0f;
+				light->SpotOuterCone = 0.0f;
+
+				ImGui::DragFloat("Range", &light->Range, 0.1f);
+				ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
+			}
+			if (light->Type == BlackJawz::Component::LightType::Directional)
+			{
+				light->Direction = { -0.5f, -1.0f, -0.5f }; // Pointing diagonally downward
+				light->Intensity = 1.0f; // Full brightness					 
+				light->Range = 0.0f;
+				light->Attenuation = { 0.0f, 0.0f, 0.0f };
+				light->SpotInnerCone = 0.0f;
+				light->SpotOuterCone = 0.0f;
+
+				ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
+				ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
+			}
+			if (light->Type == BlackJawz::Component::LightType::Spot)
+			{		
+				light->Range = 20.0f;
+				light->Attenuation = { 1.0f, 0.1f, 0.05f };							
+				light->Direction = { 0.0f, -1.0f, 0.0f }; // Downward direction
+				light->Intensity = 1.0f;				 	
+				light->SpotInnerCone = 0.9f;  // 80-90% brightness inside
+				light->SpotOuterCone = 0.7f;  // Fades out
+
+				ImGui::DragFloat("Range", &light->Range, 0.1f);
+				ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
+				ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
+				ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
+				ImGui::DragFloat("Spotlight Inner Cone", &light->SpotInnerCone, 0.1f);
+				ImGui::DragFloat("Spotlight Outer Cone", &light->SpotOuterCone, 0.1f);
+			}
 		}
 
 		// Add Component Menu
@@ -1023,7 +1220,7 @@ void BlackJawz::Editor::Editor::ViewPort(Rendering::Render& renderer)
 	}
 
 	// Pass camera matrices to renderer
-	renderer.RenderToTexture(*transformSystem, *appearanceSystem);
+	renderer.RenderToTexture(*transformSystem, *appearanceSystem, *lightSystem);
 
 	ImGui::Image((ImTextureID)renderer.GetShaderResourceView(), viewportSize);
 

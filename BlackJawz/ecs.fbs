@@ -24,11 +24,42 @@ table Appearance {
   texture: Texture;
 }
 
+enum LightType : byte { 
+  Point = 0, 
+  Directional = 1, 
+  Spot = 2 
+}
+
+table Light {
+  type: LightType = Point;
+
+  diffuse_light: [float];   // {r, g, b, a}
+  ambient_light: [float];   // {r, g, b, a}
+  specular_light: [float];  // {r, g, b, a}
+  
+  specular_power: float;
+
+  // For Point & Spot Lights
+  range: float;
+
+  // For Directional & Spot Lights
+  direction: [float]; // {x, y, z}
+  intensity: float;
+
+  // Attenuation for Point & Spot Lights
+  attenuation: [float]; // {constant, linear, quadratic}
+
+  // Spotlight-specific
+  spot_inner_cone: float;
+  spot_outer_cone: float;
+}
+
 table Entity {
   id: uint32;
   name: string;
   transform: Transform;
   appearance: Appearance;
+  light: Light;
 }
 
 table Scene {

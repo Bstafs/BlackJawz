@@ -667,7 +667,7 @@ BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreatePlaneGeometry
 }
 
 void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
-	BlackJawz::System::AppearanceSystem& appearanceSystem)
+	BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem)
 {
 	// Bind the render target texture
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), pDepthStencilView.Get());
@@ -688,7 +688,7 @@ void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformS
 	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// Render 3D scene
-	Draw(transformSystem, appearanceSystem);
+	Draw(transformSystem, appearanceSystem, lightSystem);
 
 	// Restore the default render target after rendering to texture
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
@@ -709,9 +709,10 @@ void BlackJawz::Rendering::Render::BeginFrame()
 }
 
 void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
-	BlackJawz::System::AppearanceSystem& appearanceSystem)
+	BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem)
 {
 	transformSystem.Update();
+	lightSystem.Update();
 
 	ConstantBuffer cb = {};
 
@@ -737,6 +738,7 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 		// Get the Transform and Appearance components
 		auto& transform = transformSystem.GetTransform(entity);
 		auto& appearance = appearanceSystem.GetAppearance(entity);
+		auto& light = appearanceSystem.GetAppearance(entity);
 
 		// Update world matrix
 		cb.World = XMMatrixTranspose(transform.GetWorldMatrix());

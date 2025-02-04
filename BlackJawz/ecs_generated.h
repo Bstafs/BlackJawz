@@ -27,11 +27,47 @@ struct TextureBuilder;
 struct Appearance;
 struct AppearanceBuilder;
 
+struct Light;
+struct LightBuilder;
+
 struct Entity;
 struct EntityBuilder;
 
 struct Scene;
 struct SceneBuilder;
+
+enum LightType : int8_t {
+  LightType_Point = 0,
+  LightType_Directional = 1,
+  LightType_Spot = 2,
+  LightType_MIN = LightType_Point,
+  LightType_MAX = LightType_Spot
+};
+
+inline const LightType (&EnumValuesLightType())[3] {
+  static const LightType values[] = {
+    LightType_Point,
+    LightType_Directional,
+    LightType_Spot
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesLightType() {
+  static const char * const names[4] = {
+    "Point",
+    "Directional",
+    "Spot",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameLightType(LightType e) {
+  if (::flatbuffers::IsOutRange(e, LightType_Point, LightType_Spot)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesLightType()[index];
+}
 
 struct Transform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef TransformBuilder Builder;
@@ -331,13 +367,193 @@ inline ::flatbuffers::Offset<Appearance> CreateAppearance(
   return builder_.Finish();
 }
 
+struct Light FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef LightBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TYPE = 4,
+    VT_DIFFUSE_LIGHT = 6,
+    VT_AMBIENT_LIGHT = 8,
+    VT_SPECULAR_LIGHT = 10,
+    VT_SPECULAR_POWER = 12,
+    VT_RANGE = 14,
+    VT_DIRECTION = 16,
+    VT_INTENSITY = 18,
+    VT_ATTENUATION = 20,
+    VT_SPOT_INNER_CONE = 22,
+    VT_SPOT_OUTER_CONE = 24
+  };
+  ECS::LightType type() const {
+    return static_cast<ECS::LightType>(GetField<int8_t>(VT_TYPE, 0));
+  }
+  const ::flatbuffers::Vector<float> *diffuse_light() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_DIFFUSE_LIGHT);
+  }
+  const ::flatbuffers::Vector<float> *ambient_light() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_AMBIENT_LIGHT);
+  }
+  const ::flatbuffers::Vector<float> *specular_light() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_SPECULAR_LIGHT);
+  }
+  float specular_power() const {
+    return GetField<float>(VT_SPECULAR_POWER, 0.0f);
+  }
+  float range() const {
+    return GetField<float>(VT_RANGE, 0.0f);
+  }
+  const ::flatbuffers::Vector<float> *direction() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_DIRECTION);
+  }
+  float intensity() const {
+    return GetField<float>(VT_INTENSITY, 0.0f);
+  }
+  const ::flatbuffers::Vector<float> *attenuation() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_ATTENUATION);
+  }
+  float spot_inner_cone() const {
+    return GetField<float>(VT_SPOT_INNER_CONE, 0.0f);
+  }
+  float spot_outer_cone() const {
+    return GetField<float>(VT_SPOT_OUTER_CONE, 0.0f);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int8_t>(verifier, VT_TYPE, 1) &&
+           VerifyOffset(verifier, VT_DIFFUSE_LIGHT) &&
+           verifier.VerifyVector(diffuse_light()) &&
+           VerifyOffset(verifier, VT_AMBIENT_LIGHT) &&
+           verifier.VerifyVector(ambient_light()) &&
+           VerifyOffset(verifier, VT_SPECULAR_LIGHT) &&
+           verifier.VerifyVector(specular_light()) &&
+           VerifyField<float>(verifier, VT_SPECULAR_POWER, 4) &&
+           VerifyField<float>(verifier, VT_RANGE, 4) &&
+           VerifyOffset(verifier, VT_DIRECTION) &&
+           verifier.VerifyVector(direction()) &&
+           VerifyField<float>(verifier, VT_INTENSITY, 4) &&
+           VerifyOffset(verifier, VT_ATTENUATION) &&
+           verifier.VerifyVector(attenuation()) &&
+           VerifyField<float>(verifier, VT_SPOT_INNER_CONE, 4) &&
+           VerifyField<float>(verifier, VT_SPOT_OUTER_CONE, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct LightBuilder {
+  typedef Light Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_type(ECS::LightType type) {
+    fbb_.AddElement<int8_t>(Light::VT_TYPE, static_cast<int8_t>(type), 0);
+  }
+  void add_diffuse_light(::flatbuffers::Offset<::flatbuffers::Vector<float>> diffuse_light) {
+    fbb_.AddOffset(Light::VT_DIFFUSE_LIGHT, diffuse_light);
+  }
+  void add_ambient_light(::flatbuffers::Offset<::flatbuffers::Vector<float>> ambient_light) {
+    fbb_.AddOffset(Light::VT_AMBIENT_LIGHT, ambient_light);
+  }
+  void add_specular_light(::flatbuffers::Offset<::flatbuffers::Vector<float>> specular_light) {
+    fbb_.AddOffset(Light::VT_SPECULAR_LIGHT, specular_light);
+  }
+  void add_specular_power(float specular_power) {
+    fbb_.AddElement<float>(Light::VT_SPECULAR_POWER, specular_power, 0.0f);
+  }
+  void add_range(float range) {
+    fbb_.AddElement<float>(Light::VT_RANGE, range, 0.0f);
+  }
+  void add_direction(::flatbuffers::Offset<::flatbuffers::Vector<float>> direction) {
+    fbb_.AddOffset(Light::VT_DIRECTION, direction);
+  }
+  void add_intensity(float intensity) {
+    fbb_.AddElement<float>(Light::VT_INTENSITY, intensity, 0.0f);
+  }
+  void add_attenuation(::flatbuffers::Offset<::flatbuffers::Vector<float>> attenuation) {
+    fbb_.AddOffset(Light::VT_ATTENUATION, attenuation);
+  }
+  void add_spot_inner_cone(float spot_inner_cone) {
+    fbb_.AddElement<float>(Light::VT_SPOT_INNER_CONE, spot_inner_cone, 0.0f);
+  }
+  void add_spot_outer_cone(float spot_outer_cone) {
+    fbb_.AddElement<float>(Light::VT_SPOT_OUTER_CONE, spot_outer_cone, 0.0f);
+  }
+  explicit LightBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Light> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Light>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Light> CreateLight(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ECS::LightType type = ECS::LightType_Point,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> diffuse_light = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> ambient_light = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> specular_light = 0,
+    float specular_power = 0.0f,
+    float range = 0.0f,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> direction = 0,
+    float intensity = 0.0f,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> attenuation = 0,
+    float spot_inner_cone = 0.0f,
+    float spot_outer_cone = 0.0f) {
+  LightBuilder builder_(_fbb);
+  builder_.add_spot_outer_cone(spot_outer_cone);
+  builder_.add_spot_inner_cone(spot_inner_cone);
+  builder_.add_attenuation(attenuation);
+  builder_.add_intensity(intensity);
+  builder_.add_direction(direction);
+  builder_.add_range(range);
+  builder_.add_specular_power(specular_power);
+  builder_.add_specular_light(specular_light);
+  builder_.add_ambient_light(ambient_light);
+  builder_.add_diffuse_light(diffuse_light);
+  builder_.add_type(type);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Light> CreateLightDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ECS::LightType type = ECS::LightType_Point,
+    const std::vector<float> *diffuse_light = nullptr,
+    const std::vector<float> *ambient_light = nullptr,
+    const std::vector<float> *specular_light = nullptr,
+    float specular_power = 0.0f,
+    float range = 0.0f,
+    const std::vector<float> *direction = nullptr,
+    float intensity = 0.0f,
+    const std::vector<float> *attenuation = nullptr,
+    float spot_inner_cone = 0.0f,
+    float spot_outer_cone = 0.0f) {
+  auto diffuse_light__ = diffuse_light ? _fbb.CreateVector<float>(*diffuse_light) : 0;
+  auto ambient_light__ = ambient_light ? _fbb.CreateVector<float>(*ambient_light) : 0;
+  auto specular_light__ = specular_light ? _fbb.CreateVector<float>(*specular_light) : 0;
+  auto direction__ = direction ? _fbb.CreateVector<float>(*direction) : 0;
+  auto attenuation__ = attenuation ? _fbb.CreateVector<float>(*attenuation) : 0;
+  return ECS::CreateLight(
+      _fbb,
+      type,
+      diffuse_light__,
+      ambient_light__,
+      specular_light__,
+      specular_power,
+      range,
+      direction__,
+      intensity,
+      attenuation__,
+      spot_inner_cone,
+      spot_outer_cone);
+}
+
 struct Entity FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef EntityBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_ID = 4,
     VT_NAME = 6,
     VT_TRANSFORM = 8,
-    VT_APPEARANCE = 10
+    VT_APPEARANCE = 10,
+    VT_LIGHT = 12
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -351,6 +567,9 @@ struct Entity FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ECS::Appearance *appearance() const {
     return GetPointer<const ECS::Appearance *>(VT_APPEARANCE);
   }
+  const ECS::Light *light() const {
+    return GetPointer<const ECS::Light *>(VT_LIGHT);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_ID, 4) &&
@@ -360,6 +579,8 @@ struct Entity FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyTable(transform()) &&
            VerifyOffset(verifier, VT_APPEARANCE) &&
            verifier.VerifyTable(appearance()) &&
+           VerifyOffset(verifier, VT_LIGHT) &&
+           verifier.VerifyTable(light()) &&
            verifier.EndTable();
   }
 };
@@ -380,6 +601,9 @@ struct EntityBuilder {
   void add_appearance(::flatbuffers::Offset<ECS::Appearance> appearance) {
     fbb_.AddOffset(Entity::VT_APPEARANCE, appearance);
   }
+  void add_light(::flatbuffers::Offset<ECS::Light> light) {
+    fbb_.AddOffset(Entity::VT_LIGHT, light);
+  }
   explicit EntityBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -396,8 +620,10 @@ inline ::flatbuffers::Offset<Entity> CreateEntity(
     uint32_t id = 0,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
     ::flatbuffers::Offset<ECS::Transform> transform = 0,
-    ::flatbuffers::Offset<ECS::Appearance> appearance = 0) {
+    ::flatbuffers::Offset<ECS::Appearance> appearance = 0,
+    ::flatbuffers::Offset<ECS::Light> light = 0) {
   EntityBuilder builder_(_fbb);
+  builder_.add_light(light);
   builder_.add_appearance(appearance);
   builder_.add_transform(transform);
   builder_.add_name(name);
@@ -410,14 +636,16 @@ inline ::flatbuffers::Offset<Entity> CreateEntityDirect(
     uint32_t id = 0,
     const char *name = nullptr,
     ::flatbuffers::Offset<ECS::Transform> transform = 0,
-    ::flatbuffers::Offset<ECS::Appearance> appearance = 0) {
+    ::flatbuffers::Offset<ECS::Appearance> appearance = 0,
+    ::flatbuffers::Offset<ECS::Light> light = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   return ECS::CreateEntity(
       _fbb,
       id,
       name__,
       transform,
-      appearance);
+      appearance,
+      light);
 }
 
 struct Scene FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

@@ -108,11 +108,13 @@ namespace BlackJawz::System
 	private:
 		// Reference to the Appearance component array
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Light>& lightArray;
+		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& transformArray;
 
 	public:
 		// Constructor where appearanceArray is passed in
-		LightSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Light>& lArray)
-			: lightArray(lArray) {
+		LightSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Light>& lArray, 
+			BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& tArray)
+			: lightArray(lArray), transformArray(tArray) {
 		}
 
 		BlackJawz::Component::Light& GetLight(BlackJawz::Entity::Entity entity)
@@ -123,6 +125,29 @@ namespace BlackJawz::System
 		const std::set<BlackJawz::Entity::Entity>& GetEntities() const
 		{
 			return entities;
+		}
+
+		void Update()
+		{
+			for (auto entity : entities)
+			{
+				auto& light = lightArray.GetData(entity);
+				auto& transform = transformArray.GetData(entity);
+
+				if (light.Type == BlackJawz::Component::LightType::Directional)
+				{
+					// Use direction only
+					light.Direction = transform.rotation; // Assuming rotation holds direction
+				}
+				else
+				{
+					// Use position from Transform for Point & Spot Lights
+					XMFLOAT3 lightPos = transform.position;
+
+					// Send to shader
+				//	shader.SetLightPosition(entity, lightPos);
+				}
+			}
 		}
 
 		// Add an entity to the system

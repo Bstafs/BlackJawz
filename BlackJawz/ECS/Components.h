@@ -63,9 +63,38 @@ namespace BlackJawz::Component
 		ComPtr<ID3D11ShaderResourceView> textureData;
 	};
 
+	enum class LightType
+	{
+		Point,
+		Directional,
+		Spot
+	};
+
 	struct Light
 	{
 		Light() = default;
 
+		LightType Type = LightType::Point; // Default to Point Light
+
+		XMFLOAT4 DiffuseLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+		XMFLOAT4 AmbientLight = { 0.2f, 0.2f, 0.2f, 1.0f };
+		XMFLOAT4 SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		float SpecularPower = 32.0f;
+
+		// For Point & Spot Lights
+		float Range = 10.0f;
+
+		// For Directional & Spot Lights
+		XMFLOAT3 Direction = { 0.0f, -1.0f, 0.0f };
+		float Intensity = 1.0f;
+
+		// Attenuation for Point & Spot Lights
+		XMFLOAT3 Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
+		float Padding = 0.0f; // Padding for memory alignment
+
+		// Spotlight-specific
+		float SpotInnerCone = 0.8f; // Inner cone (cosine of angle)
+		float SpotOuterCone = 0.5f; // Outer cone (cosine of angle)
 	};
 }

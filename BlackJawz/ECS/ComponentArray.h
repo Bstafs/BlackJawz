@@ -45,6 +45,11 @@ namespace BlackJawz::Component
             return componentArray[entityToIndex[entity]];
         }
 
+        bool HasData(BlackJawz::Entity::Entity entity) const
+        {
+            return entityToIndex.find(entity) != entityToIndex.end();
+        }
+
         void EntityDestroyed(BlackJawz::Entity::Entity entity) override
         {
             if (entityToIndex.find(entity) != entityToIndex.end()) 

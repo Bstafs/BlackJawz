@@ -732,22 +732,34 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	// Iterate over entities in the Appearance System
+	// Iterate over entities in the Appearance System (only rendering objects)
 	for (auto entity : appearanceSystem.GetEntities())
 	{
-		// Get the Transform and Appearance components
-		auto& transform = transformSystem.GetTransform(entity);
 		auto& appearance = appearanceSystem.GetAppearance(entity);
-		auto& light = lightSystem.GetLight(entity);
-
-		// Update world matrix
-		cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
-
-		// Get geometry from the Appearance component
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
+		ComPtr<ID3D11ShaderResourceView> entityTexture = appearance.GetTexture();
 
-		ComPtr<ID3D11ShaderResourceView> entityTexture  = appearance.GetTexture();
+		// --- Update Transform for this entity ---
+		if (transformSystem.HasComponent(entity))
+		{
+			auto& transform = transformSystem.GetTransform(entity);
+			cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
+		}
+
+		// --- Update Light for this entity (if it has one) ---
+		if (lightSystem.HasComponent(entity))
+		{
+			auto& light = lightSystem.GetLight(entity);
+			cb.diffuseLight = light.DiffuseLight;
+		}
+		else
+		{
+			// If no light component, reset to default (optional)
+			cb.diffuseLight = XMFLOAT4(0, 0, 0, 0); // No light for this object
+		}
+
+		// Upload the updated constant buffer
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 		// Bind Vertex and Index Buffers
 		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);

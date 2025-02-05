@@ -21,6 +21,7 @@ struct ConstantBuffer
 	XMMATRIX World;
 	XMMATRIX View;
 	XMMATRIX Projection;
+	XMFLOAT4 diffuseLight;
 };
 
 namespace BlackJawz::Rendering

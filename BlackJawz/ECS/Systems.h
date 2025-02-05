@@ -38,6 +38,11 @@ namespace BlackJawz::System
 			}
 		}
 
+		bool HasComponent(BlackJawz::Entity::Entity entity) const
+		{
+			return transformArray.HasData(entity);
+		}
+
 		// You may want a method to add entities to this system when they have a Transform component
 		void AddEntity(BlackJawz::Entity::Entity entity)
 		{
@@ -72,22 +77,9 @@ namespace BlackJawz::System
 			return entities;
 		}
 
-		void Draw(ID3D11DeviceContext* pImmediateContext)
+		bool HasComponent(BlackJawz::Entity::Entity entity) const
 		{
-			// Iterate over all entities with an Appearance component
-			for (auto entity : entities)
-			{
-				// Access the Appearance component for each entity
-				auto& appearance = appearanceArray.GetData(entity);
-				BlackJawz::Component::Geometry geo = appearance.GetGeometry();
-
-				// Set up the geometry for drawing
-				pImmediateContext->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
-				pImmediateContext->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-
-				// Draw the entity
-				pImmediateContext->DrawIndexed(geo.IndicesCount, 0, 0);
-			}
+			return appearanceArray.HasData(entity);
 		}
 
 		// Add an entity to the system
@@ -148,6 +140,11 @@ namespace BlackJawz::System
 				//	shader.SetLightPosition(entity, lightPos);
 				}
 			}
+		}
+
+		bool HasComponent(BlackJawz::Entity::Entity entity) const
+		{
+			return lightArray.HasData(entity);
 		}
 
 		// Add an entity to the system

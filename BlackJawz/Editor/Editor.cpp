@@ -26,7 +26,7 @@ BlackJawz::Editor::Editor::~Editor()
 
 void BlackJawz::Editor::Editor::Initialise(Rendering::Render& renderer)
 {
-	LoadScene("Scenes/Default.bin", renderer);
+	//LoadScene("Scenes/Default.bin", renderer);
 }
 
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
@@ -182,11 +182,12 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 	for (auto entity : entities)
 	{
 		// Get the name from the map
-		auto nameStr = entityNames[entity];
+		auto it = entityNames.find(entity);
+		std::string nameStr = (it != entityNames.end()) ? it->second : "";
 		auto nameOffset = builder.CreateString(nameStr);
 
 		// --- Serialize the Transform component ---
-		flatbuffers::Offset<ECS::Transform> transformOffset = 0;
+		flatbuffers::Offset<ECS::Transform> transformOffset;
 		if (transformArray.HasData(entity))
 		{
 			auto& transform = transformArray.GetData(entity);
@@ -211,7 +212,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 		}
 
 		// --- Serialize the Appearance (and its Geometry) component ---
-		flatbuffers::Offset<ECS::Appearance> appearanceOffset = 0;
+		flatbuffers::Offset<ECS::Appearance> appearanceOffset;
 		if (appearanceArray.HasData(entity))
 		{
 			auto& appearanceComp = appearanceArray.GetData(entity);
@@ -225,13 +226,20 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 			auto vertexBufferVec = builder.CreateVector(vertexData);
 			auto indexBufferVec = builder.CreateVector(indexData);
 
-			auto geometryOffset = ECS::CreateGeometry(builder,
-				geometry.IndicesCount,
-				geometry.vertexBufferStride,
-				geometry.vertexBufferOffset,
-				vertexBufferVec,
-				indexBufferVec
-			);
+			flatbuffers::Offset<ECS::Geometry> geometryOffset;
+			if (!vertexData.empty() && !indexData.empty()) 
+			{
+				auto vertexBufferVec = builder.CreateVector(vertexData);
+				auto indexBufferVec = builder.CreateVector(indexData);
+
+				geometryOffset = ECS::CreateGeometry(builder,
+					geometry.IndicesCount,
+					geometry.vertexBufferStride,
+					geometry.vertexBufferOffset,
+					vertexBufferVec,
+					indexBufferVec
+				);
+			}
 
 			auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTexture().Get());
 			auto textureVec = builder.CreateVector(textureData);
@@ -240,7 +248,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 			appearanceOffset = ECS::CreateAppearance(builder, geometryOffset, textureOffset);
 		}
 		// --- Serialize Light Component (if entity has light) ---
-		flatbuffers::Offset<ECS::Light> lightOffset = 0;
+		flatbuffers::Offset<ECS::Light> lightOffset;
 		if (lightArray.HasData(entity))
 		{
 			auto& light = lightArray.GetData(entity);
@@ -385,16 +393,16 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 	// Clear the current scene before loading a new one
 	for (auto entity : entities)
 	{
-		entityManager.DestroyEntity(entity);
-		entityManager.SetSignature(entity, std::bitset<32>());
-
-		if (transformArray.HasData(entity)) transformArray.RemoveData(entity);
-		if (appearanceArray.HasData(entity)) appearanceArray.RemoveData(entity);
-		if (lightArray.HasData(entity)) lightArray.RemoveData(entity);
-
 		transformSystem->RemoveEntity(entity);
 		appearanceSystem->RemoveEntity(entity);
 		lightSystem->RemoveEntity(entity);
+
+		if (transformArray.HasData(entity)) transformArray.RemoveData(entity);
+		if (appearanceArray.HasData(entity)) appearanceArray.RemoveData(entity);
+	    if (lightArray.HasData(entity)) lightArray.RemoveData(entity);
+
+		entityManager.DestroyEntity(entity);
+		entityManager.SetSignature(entity, std::bitset<32>());
 	}
 	entities.clear();
 	entityNames.clear();
@@ -1025,7 +1033,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			std::bitset<32> signature;
 			signature.set(0);  // component 0 is Transform
-			signature.set(1);  // component 2 is Light
+			signature.set(2);  // component 2 is Light
 			entityManager.SetSignature(newEntity, signature);
 
 			transformSystem->AddEntity(newEntity);

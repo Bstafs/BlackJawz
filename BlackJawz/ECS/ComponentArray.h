@@ -40,12 +40,17 @@ namespace BlackJawz::Component
 
         void RemoveData(BlackJawz::Entity::Entity entity)
         {
-            size_t index = entityToIndex[entity];
+            // Ensure the entity exists
+            auto it = entityToIndex.find(entity);
+            if (it == entityToIndex.end())
+                return; // Entity doesn't exist, avoid crash
+
+            size_t index = it->second;
             size_t lastIndex = size - 1;
 
-            // Move last element into the deleted entity's slot (if not already last)
             if (index != lastIndex)
             {
+                // Move last element into the deleted entity's slot
                 componentArray[index] = componentArray[lastIndex];
 
                 BlackJawz::Entity::Entity lastEntity = indexToEntity[lastIndex];
@@ -53,9 +58,10 @@ namespace BlackJawz::Component
                 indexToEntity[index] = lastEntity;
             }
 
-            // Erase old references
+            // Erase entity references
             entityToIndex.erase(entity);
-            indexToEntity.erase(lastIndex);
+            indexToEntity.erase(index); // Fix: Erase `index`, not `lastIndex`
+
             --size;
         }
 

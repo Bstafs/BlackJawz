@@ -372,27 +372,27 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
 		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 1.0f} },
 		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f	 }, {1.0f, 1.0f} },
-		 					 						 			   
+
 		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 0.0f} },
 		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 0.0f} },
 		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
 		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
-		 				 							 			   
+
 		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
 		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {1.0f, 1.0f} },
 		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {1.0f, 0.0f} },
 		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f   }, {0.0f, 0.0f} },
-		 				 							 			   
+
 		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
 		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {0.0f, 1.0f} },
 		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
 		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {1.0f, 0.0f} },
-		 					 						 			   
+
 		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 1.0f} },
 		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 1.0f} },
 		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {1.0f, 0.0f} },
 		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {0.0f, 0.0f} },
-		 					 						 			   
+
 		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {1.0f, 1.0f} },
 		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {0.0f, 1.0f} },
 		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 0.0f} },
@@ -732,7 +732,58 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	// Iterate over entities in the Appearance System (only rendering objects)
+	// Process all lights before rendering
+	if (!lightSystem.GetEntities().empty())
+	{
+		for (auto lightEntity : lightSystem.GetEntities())
+		{
+			auto& light = lightSystem.GetLight(lightEntity);
+
+			// Retrieve light position from Transform component
+			if (transformSystem.HasComponent(lightEntity))
+			{
+				auto& lightTransform = transformSystem.GetTransform(lightEntity);
+
+				cb.CameraPosition = cameraPosition;
+
+				XMFLOAT3 lightPosition = lightTransform.GetPosition();
+				cb.LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
+
+				if (light.Type == BlackJawz::Component::LightType::Directional ||
+					light.Type == BlackJawz::Component::LightType::Spot)
+				{
+					XMFLOAT3 lightRotation = lightTransform.GetRotation();
+					cb.LightDirection = lightRotation;
+				}
+			}
+
+			// Set light data 
+			cb.LightType = static_cast<int>(light.Type);
+
+			cb.DiffuseLight = light.DiffuseLight;
+			cb.AmbientLight = light.AmbientLight;
+			cb.SpecularLight = light.SpecularLight;
+
+			cb.SpecularPower = light.SpecularPower;
+			cb.Range = light.Range;
+			cb.Padding01 = { 0.0f, 0.0f };
+
+			cb.LightDirection = light.Direction;
+			cb.Intensity = light.Intensity;
+
+			cb.Attenuation = light.Attenuation;
+			cb.Padding02 = 0.0f;
+
+			cb.SpotInnerCone = light.SpotInnerCone;
+			cb.SpotOuterCone = light.SpotOuterCone;
+			cb.Padding03 = 0.0f;
+		}
+	}
+
+	// Upload global light data to constant buffer before drawing
+	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
+	// Iterate over entities in the Appearance System 
 	for (auto entity : appearanceSystem.GetEntities())
 	{
 		auto& appearance = appearanceSystem.GetAppearance(entity);
@@ -746,19 +797,7 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 			cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
 		}
 
-		// --- Update Light for this entity (if it has one) ---
-		if (lightSystem.HasComponent(entity))
-		{
-			auto& light = lightSystem.GetLight(entity);
-			cb.diffuseLight = light.DiffuseLight;
-		}
-		else
-		{
-			// If no light component, reset to default (optional)
-			cb.diffuseLight = XMFLOAT4(0, 0, 0, 0); // No light for this object
-		}
-
-		// Upload the updated constant buffer
+		// Upload per-object constant buffer (transform, but not lighting)
 		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 		// Bind Vertex and Index Buffers

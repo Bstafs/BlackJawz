@@ -9,8 +9,6 @@
 #include "../ECS/ComponentArray.h"
 #include "../ECS/SystemManager.h"
 
-
-
 namespace BlackJawz::Editor
 {
 	struct Object

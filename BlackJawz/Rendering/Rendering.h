@@ -18,10 +18,32 @@ struct Vertex
 
 struct ConstantBuffer
 {
-	XMMATRIX World;
+	XMMATRIX World; 
 	XMMATRIX View;
 	XMMATRIX Projection;
-	XMFLOAT4 diffuseLight;
+
+	XMFLOAT4 LightPosition;
+	XMFLOAT4 DiffuseLight;
+	XMFLOAT4 AmbientLight;
+	XMFLOAT4 SpecularLight;
+
+	float SpecularPower;
+	float Range;
+	XMFLOAT2 Padding01;
+
+	XMFLOAT3 LightDirection;
+	float Intensity;
+
+	XMFLOAT3 Attenuation;
+	float Padding02;
+
+	float SpotInnerCone;
+	float SpotOuterCone;
+	int LightType;
+	float Padding03;
+
+	XMFLOAT3 CameraPosition;
+	float Padding04;
 };
 
 namespace BlackJawz::Rendering
@@ -48,6 +70,7 @@ namespace BlackJawz::Rendering
 
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
+		void SetCameraPosition(XMFLOAT3 cameraPos) { cameraPosition = cameraPos; }
 
 		ID3D11DeviceContext* GetDeviceContext() { return pImmediateContext.Get(); }
 		ID3D11Device* GetDevice() { return pID3D11Device.Get(); }
@@ -130,6 +153,7 @@ namespace BlackJawz::Rendering
 		// Camera
 		XMFLOAT4X4 viewMatrix = XMFLOAT4X4();
 		XMFLOAT4X4 projectionMatrix = XMFLOAT4X4();
+		XMFLOAT3 cameraPosition = XMFLOAT3();
 
 		ID3D11ShaderResourceView* textureRV;
 	};

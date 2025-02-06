@@ -80,6 +80,8 @@ void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
 
 	renderer.SetViewMatrix(editorCamera->GetViewMatrix());
 	renderer.SetProjectionMatrix(editorCamera->GetProjectionMatrix());
+	renderer.SetCameraPosition(editorCamera->GetPosition());
+
 
 	// Render editor components
 	MenuBar(renderer);          // Menu at the top
@@ -1014,14 +1016,16 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformArray.InsertData(newEntity, transform);
 
 			BlackJawz::Component::Light light;
-			light.Type = BlackJawz::Component::LightType::Spot;
+			light.Type = BlackJawz::Component::LightType::Point;
 
 			// Light 
 			light.DiffuseLight = { 1.0f, 0.8f, 0.6f, 1.0f };
-			light.AmbientLight = { 0.2f, 0.1f, 0.1f, 1.0f };
-			light.SpecularLight = { 1.0f, 0.9f, 0.7f, 1.0f };
+			light.AmbientLight = { 0.1f, 0.1f, 0.1f, 1.0f };
+			light.SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
 		
-			light.Range = 15.0f; // Maximum reach
+			light.SpecularPower = 32.0f;
+
+			light.Range = 10.0f; // Maximum reach
 			light.Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
 
 			light.Direction = { 0.0f, 0.0f, 0.0f };
@@ -1132,49 +1136,14 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragFloat4("Diffuse Light", &light->DiffuseLight.x, 0.1f);
 			ImGui::DragFloat4("Ambient Light", &light->AmbientLight.x, 0.1f);
 			ImGui::DragFloat4("Specular Light", &light->SpecularLight.x, 0.1f);
-
 			ImGui::DragFloat("Specular Power", &light->SpecularPower, 0.1f);
 
-			if (light->Type == BlackJawz::Component::LightType::Point)
-			{			
-				light->Range = 15.0f; // Maximum reach
-				light->Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
-				light->Direction = { 0.0f, 0.0f, 0.0f };
-				light->Intensity = 0.0f;
-				light->SpotInnerCone = 0.0f;
-				light->SpotOuterCone = 0.0f;
-
-				ImGui::DragFloat("Range", &light->Range, 0.1f);
-				ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
-			}
-			if (light->Type == BlackJawz::Component::LightType::Directional)
-			{
-				light->Direction = { -0.5f, -1.0f, -0.5f }; // Pointing diagonally downward
-				light->Intensity = 1.0f; // Full brightness					 
-				light->Range = 0.0f;
-				light->Attenuation = { 0.0f, 0.0f, 0.0f };
-				light->SpotInnerCone = 0.0f;
-				light->SpotOuterCone = 0.0f;
-
-				ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
-				ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
-			}
-			if (light->Type == BlackJawz::Component::LightType::Spot)
-			{		
-				light->Range = 20.0f;
-				light->Attenuation = { 1.0f, 0.1f, 0.05f };							
-				light->Direction = { 0.0f, -1.0f, 0.0f }; // Downward direction
-				light->Intensity = 1.0f;				 	
-				light->SpotInnerCone = 0.9f;  // 80-90% brightness inside
-				light->SpotOuterCone = 0.7f;  // Fades out
-
-				ImGui::DragFloat("Range", &light->Range, 0.1f);
-				ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
-				ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
-				ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
-				ImGui::DragFloat("Spotlight Inner Cone", &light->SpotInnerCone, 0.1f);
-				ImGui::DragFloat("Spotlight Outer Cone", &light->SpotOuterCone, 0.1f);
-			}
+			ImGui::DragFloat("Range", &light->Range, 0.1f);
+			ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
+			ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
+			ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
+			ImGui::DragFloat("Spotlight Inner Cone", &light->SpotInnerCone, 0.1f);
+			ImGui::DragFloat("Spotlight Outer Cone", &light->SpotOuterCone, 0.1f);
 		}
 
 		// Add Component Menu

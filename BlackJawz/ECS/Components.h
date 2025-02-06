@@ -29,6 +29,8 @@ namespace BlackJawz::Component
 		}
 
 		XMMATRIX GetWorldMatrix() const { return XMLoadFloat4x4(&worldMatrix); }
+		XMFLOAT3 GetPosition() const { return position; }
+		XMFLOAT3 GetRotation() const { return rotation; }
 
 		void UpdateWorldMatrix()
 		{
@@ -63,11 +65,11 @@ namespace BlackJawz::Component
 		ComPtr<ID3D11ShaderResourceView> textureData;
 	};
 
-	enum class LightType
+	enum class LightType : int
 	{
-		Point,
-		Directional,
-		Spot
+		Point = 0,
+		Directional = 1,
+		Spot = 2
 	};
 
 	struct Light

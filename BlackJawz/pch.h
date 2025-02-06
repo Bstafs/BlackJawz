@@ -42,6 +42,7 @@
 #include <directxcolors.h>
 #include "Util/ID3D11Functions.h"
 #include "Util/DDSTextureLoader11.h"
+#include "../DirectXTex/DirectXTex.h"
 
 // ImGui
 #include "../BlackJawz/ImGui/imgui.h"
@@ -53,8 +54,6 @@
 #undef max
 #include <flatbuffers/flatbuffers.h>
 #include "ecs_generated.h"
-
-#include "../DirectXTex/DirectXTex.h"
 
 #endif //PCH_H
 

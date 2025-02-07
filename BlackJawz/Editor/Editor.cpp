@@ -26,7 +26,7 @@ BlackJawz::Editor::Editor::~Editor()
 
 void BlackJawz::Editor::Editor::Initialise(Rendering::Render& renderer)
 {
-	LoadScene("Scenes/Default.bin", renderer);
+	//LoadScene("Scenes/Default.bin", renderer);
 }
 
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
@@ -893,6 +893,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 					transformSystem->RemoveEntity(entity);
 					appearanceSystem->RemoveEntity(entity);
+					lightSystem->RemoveEntity(entity);
 
 					// Reset the selected object index
 					selectedObject = -1;
@@ -1020,23 +1021,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			BlackJawz::Component::Transform transform;
 			transformArray.InsertData(newEntity, transform);
 
-			BlackJawz::Component::Light light;
-			light.Type = BlackJawz::Component::LightType::Point;
-
-			// Light 
-			light.DiffuseLight = { 1.0f, 0.8f, 0.6f, 1.0f };
-			light.AmbientLight = { 0.1f, 0.1f, 0.1f, 1.0f };
-			light.SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
-		
-			light.SpecularPower = 32.0f;
-
-			light.Range = 10.0f; // Maximum reach
-			light.Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
-
-			light.Direction = { 0.0f, 0.0f, 0.0f };
-			light.Intensity = 0.0f;
-			light.SpotInnerCone = 0.0f;
-			light.SpotOuterCone = 0.0f;
+			BlackJawz::Component::Light light(BlackJawz::Component::LightType::Point);
 
 			lightArray.InsertData(newEntity, light);
 
@@ -1135,20 +1120,38 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 
 			if (ImGui::Combo("Light Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
 			{
-				light->Type = static_cast<BlackJawz::Component::LightType>(currentType);
+				// If the light type changes, reset its properties
+				*light = BlackJawz::Component::Light(static_cast<BlackJawz::Component::LightType>(currentType));
 			}
 
+			// Common Light Properties
 			ImGui::DragFloat4("Diffuse Light", &light->DiffuseLight.x, 0.1f);
 			ImGui::DragFloat4("Ambient Light", &light->AmbientLight.x, 0.1f);
 			ImGui::DragFloat4("Specular Light", &light->SpecularLight.x, 0.1f);
 			ImGui::DragFloat("Specular Power", &light->SpecularPower, 0.1f);
-
-			ImGui::DragFloat("Range", &light->Range, 0.1f);
-			ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
-			ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
 			ImGui::DragFloat("Intensity", &light->Intensity, 0.1f);
-			ImGui::DragFloat("Spotlight Inner Cone", &light->SpotInnerCone, 0.1f);
-			ImGui::DragFloat("Spotlight Outer Cone", &light->SpotOuterCone, 0.1f);
+
+			// Show properties only relevant to Point and Spot lights
+			if (light->Type == BlackJawz::Component::LightType::Point ||
+				light->Type == BlackJawz::Component::LightType::Spot)
+			{
+				ImGui::DragFloat("Range", &light->Range, 0.1f);
+				ImGui::DragFloat3("Attenuation", &light->Attenuation.x, 0.1f);
+			}
+
+			// Show properties only relevant to Directional and Spot lights
+			if (light->Type == BlackJawz::Component::LightType::Directional ||
+				light->Type == BlackJawz::Component::LightType::Spot)
+			{
+				ImGui::DragFloat3("Direction", &light->Direction.x, 0.1f);
+			}
+
+			// Show spotlight-specific properties
+			if (light->Type == BlackJawz::Component::LightType::Spot)
+			{
+				ImGui::DragFloat("Spotlight Inner Cone", &light->SpotInnerCone, 0.01f, 0.0f, 1.0f);
+				ImGui::DragFloat("Spotlight Outer Cone", &light->SpotOuterCone, 0.01f, 0.0f, 1.0f);
+			}
 		}
 
 		// Add Component Menu

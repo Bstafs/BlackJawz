@@ -732,56 +732,60 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
+	// Global Camera Position
+	cb.CameraPosition = cameraPosition;
+	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
 	// Process all lights before rendering
 	if (!lightSystem.GetEntities().empty())
 	{
-		for (auto lightEntity : lightSystem.GetEntities())
+		// Clear light buffer
+		ZeroMemory(cb.lights, sizeof(cb.lights));
+		cb.numLights = static_cast<int>(lightSystem.GetEntities().size());
+
+		if (!lightSystem.GetEntities().empty())
 		{
-			auto& light = lightSystem.GetLight(lightEntity);
+			int lightIndex = 0;
 
-			// Retrieve light position from Transform component
-			if (transformSystem.HasComponent(lightEntity))
+			for (auto lightEntity : lightSystem.GetEntities())
 			{
-				auto& lightTransform = transformSystem.GetTransform(lightEntity);
+				if (lightIndex >= MAX_LIGHTS) break; // Avoid exceeding the limit
 
-				cb.CameraPosition = cameraPosition;
+				auto& light = lightSystem.GetLight(lightEntity);
 
-				XMFLOAT3 lightPosition = lightTransform.GetPosition();
-				cb.LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
-
-				if (light.Type == BlackJawz::Component::LightType::Directional ||
-					light.Type == BlackJawz::Component::LightType::Spot)
+				if (transformSystem.HasComponent(lightEntity))
 				{
-					XMFLOAT3 lightRotation = lightTransform.GetRotation();
-					cb.LightDirection = lightRotation;
+					auto& lightTransform = transformSystem.GetTransform(lightEntity);
+		
+					XMFLOAT3 lightPosition = lightTransform.GetPosition();
+					cb.lights[lightIndex].LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
+
+					if (light.Type == BlackJawz::Component::LightType::Directional ||
+						light.Type == BlackJawz::Component::LightType::Spot)
+					{
+						XMFLOAT3 lightRotation = lightTransform.GetRotation();
+						cb.lights[lightIndex].LightDirection = lightRotation;
+					}
 				}
+
+				cb.lights[lightIndex].LightType = static_cast<int>(light.Type);
+				cb.lights[lightIndex].DiffuseLight = light.DiffuseLight;
+				cb.lights[lightIndex].AmbientLight = light.AmbientLight;
+				cb.lights[lightIndex].SpecularLight = light.SpecularLight;
+
+				cb.lights[lightIndex].SpecularPower = light.SpecularPower;
+				cb.lights[lightIndex].Range = light.Range;
+				cb.lights[lightIndex].Intensity = light.Intensity;
+				cb.lights[lightIndex].Attenuation = light.Attenuation;
+				cb.lights[lightIndex].SpotInnerCone = light.SpotInnerCone;
+				cb.lights[lightIndex].SpotOuterCone = light.SpotOuterCone;
+
+				lightIndex++;
 			}
-
-			// Set light data 
-			cb.LightType = static_cast<int>(light.Type);
-
-			cb.DiffuseLight = light.DiffuseLight;
-			cb.AmbientLight = light.AmbientLight;
-			cb.SpecularLight = light.SpecularLight;
-
-			cb.SpecularPower = light.SpecularPower;
-			cb.Range = light.Range;
-			cb.Padding01 = { 0.0f, 0.0f };
-
-			cb.LightDirection = light.Direction;
-			cb.Intensity = light.Intensity;
-
-			cb.Attenuation = light.Attenuation;
-			cb.Padding02 = 0.0f;
-
-			cb.SpotInnerCone = light.SpotInnerCone;
-			cb.SpotOuterCone = light.SpotOuterCone;
-			cb.Padding03 = 0.0f;
 		}
-	}
 
-	// Upload global light data to constant buffer before drawing
-	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+	}
 
 	// Iterate over entities in the Appearance System 
 	for (auto entity : appearanceSystem.GetEntities())

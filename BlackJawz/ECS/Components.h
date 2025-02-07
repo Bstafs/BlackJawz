@@ -76,27 +76,66 @@ namespace BlackJawz::Component
 	{
 		Light() = default;
 
-		LightType Type = LightType::Point; // Default to Point Light
+		Light(LightType type) : Type(type) // Constructor to initialize based on type
+		{
+			switch (Type)
+			{
+			case LightType::Point:
+				DiffuseLight = { 1.0f, 0.8f, 0.6f, 1.0f };
+				AmbientLight = { 0.1f, 0.1f, 0.1f, 1.0f };
+				SpecularLight = { 1.0f, 0.9f, 0.7f, 1.0f };
+				SpecularPower = 32.0f;
+				Range = 15.0f;
+				Attenuation = { 1.0f, 0.1f, 0.01f }; // Default attenuation
+				Intensity = 1.0f;
+				Direction = { 0.0f, 0.0f, 0.0f };
+				SpotInnerCone = 0.0f;
+				SpotOuterCone = 0.0f;
+				break;
 
-		XMFLOAT4 DiffuseLight = { 1.0f, 1.0f, 1.0f, 1.0f };
-		XMFLOAT4 AmbientLight = { 0.2f, 0.2f, 0.2f, 1.0f };
-		XMFLOAT4 SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+			case LightType::Directional:
+				DiffuseLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+				AmbientLight = { 0.2f, 0.2f, 0.2f, 1.0f };
+				SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+				SpecularPower = 64.0f;
+				Direction = { -0.5f, -1.0f, -0.5f }; // Sunlight direction
+				Intensity = 1.0f;
+				Range = 0.0f;
+				Attenuation = { 0.0f, 0.0f, 0.0f };
+				SpotInnerCone = 0.0f;
+				SpotOuterCone = 0.0f;
+				break;
 
-		float SpecularPower = 32.0f;
+			case LightType::Spot:
+				DiffuseLight = { 1.0f, 1.0f, 0.9f, 1.0f };
+				AmbientLight = { 0.1f, 0.1f, 0.1f, 1.0f };
+				SpecularLight = { 1.0f, 1.0f, 1.0f, 1.0f };
+				SpecularPower = 32.0f;
+				Range = 20.0f;
+				Attenuation = { 1.0f, 0.1f, 0.02f };
+				Direction = { 0.0f, -1.0f, 0.0f }; // Spot pointing down
+				SpotInnerCone = cos(XMConvertToRadians(15.0f));
+				SpotOuterCone = cos(XMConvertToRadians(30.0f));
+				Intensity = 1.5f;
+				break;
+			}
+		}
 
-		// For Point & Spot Lights
-		float Range = 10.0f;
+		LightType Type = LightType::Point;
 
-		// For Directional & Spot Lights
-		XMFLOAT3 Direction = { 0.0f, -1.0f, 0.0f };
-		float Intensity = 1.0f;
+		XMFLOAT4 DiffuseLight;
+		XMFLOAT4 AmbientLight;
+		XMFLOAT4 SpecularLight;
+		float SpecularPower;
 
-		// Attenuation for Point & Spot Lights
-		XMFLOAT3 Attenuation = { 1.0f, 0.1f, 0.01f }; // Constant, Linear, Quadratic
-		float Padding = 0.0f; // Padding for memory alignment
+		float Range; // For Point & Spot Lights
+		XMFLOAT3 Direction;
+		float Intensity;
 
-		// Spotlight-specific
-		float SpotInnerCone = 0.8f; // Inner cone (cosine of angle)
-		float SpotOuterCone = 0.5f; // Outer cone (cosine of angle)
+		XMFLOAT3 Attenuation;
+		float Padding;
+
+		float SpotInnerCone; // For Spotlights
+		float SpotOuterCone;
 	};
 }

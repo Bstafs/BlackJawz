@@ -4,6 +4,8 @@
 #include "../ECS/Components.h"
 #include "../ECS/Systems.h"
 
+#define MAX_LIGHTS 10
+
 namespace BlackJawz::Application
 {
 	class Application;
@@ -16,12 +18,8 @@ struct Vertex
 	DirectX::XMFLOAT2 TexC;     // Vertex Texture Coordinates
 };
 
-struct ConstantBuffer
+struct LightProperties
 {
-	XMMATRIX World; 
-	XMMATRIX View;
-	XMMATRIX Projection;
-
 	XMFLOAT4 LightPosition;
 	XMFLOAT4 DiffuseLight;
 	XMFLOAT4 AmbientLight;
@@ -41,9 +39,18 @@ struct ConstantBuffer
 	float SpotOuterCone;
 	int LightType;
 	float Padding03;
+};
 
+struct ConstantBuffer
+{
+	XMMATRIX World; 
+	XMMATRIX View;
+	XMMATRIX Projection;	
+
+	LightProperties lights[MAX_LIGHTS];
+
+	int numLights;
 	XMFLOAT3 CameraPosition;
-	float Padding04;
 };
 
 namespace BlackJawz::Rendering

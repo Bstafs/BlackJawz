@@ -26,7 +26,7 @@ BlackJawz::Editor::Editor::~Editor()
 
 void BlackJawz::Editor::Editor::Initialise(Rendering::Render& renderer)
 {
-	//LoadScene("Scenes/Default.bin", renderer);
+	LoadScene("Scenes/Default.bin", renderer);
 }
 
 void BlackJawz::Editor::Editor::Render(Rendering::Render& renderer)
@@ -619,6 +619,11 @@ void BlackJawz::Editor::Editor::MenuBar(Rendering::Render& renderer)
 			if (ImGui::MenuItem("Save Project as.."))
 			{
 				// Save Project as functionality 
+			}
+
+			if (ImGui::MenuItem("New Scene.."))
+			{
+
 			}
 
 			if (ImGui::MenuItem("Save Scene.."))

@@ -491,12 +491,12 @@ HRESULT BlackJawz::Rendering::Render::InitSphere()
 			int v3 = v2 + 1;
 
 			sphereIndices.push_back(v0);
-			sphereIndices.push_back(v2);
 			sphereIndices.push_back(v1);
+			sphereIndices.push_back(v2);
 
 			sphereIndices.push_back(v1);
-			sphereIndices.push_back(v2);
 			sphereIndices.push_back(v3);
+			sphereIndices.push_back(v2);
 		}
 	}
 

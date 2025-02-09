@@ -178,5 +178,11 @@
     <FxCompile Include="Rendering\Shaders\shader.hlsl">
       <Filter>Rendering\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Rendering\Shaders\GBufferVertexShader.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Rendering\Shaders\GBufferPixelShader.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

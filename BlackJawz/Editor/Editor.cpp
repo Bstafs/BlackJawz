@@ -1033,7 +1033,6 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			transformSystem->AddEntity(newEntity);
 			systemManager.SetSignature<BlackJawz::System::TransformSystem>(signature);
 
-
 			if (transformArray.HasData(newEntity))
 			{
 				lightSystem->AddEntity(newEntity);

@@ -256,6 +256,47 @@ HRESULT BlackJawz::Rendering::Render::InitShadersAndInputLayout()
 	return hr;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitGBufferShadersAndInputLayout()
+{
+	HRESULT hr = S_OK;
+
+	// Compile the vertex shader
+	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/GBufferVertexShader.hlsl", "VS", "vs_5_0", &vsBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile vertex shader.\n");
+		return hr;
+	}
+
+	// Compile the pixel shader
+	Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/GBufferPixelShader.hlsl", "PS", "ps_5_0", &psBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile pixel shader.\n");
+		return hr;
+	}
+
+	// Create the vertex shader
+	hr = pID3D11Device.Get()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, pGBufferVertexShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create vertex shader.\n");
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = pID3D11Device.Get()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, pGBufferPixelShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create pixel shader.\n");
+		return hr;
+	}
+
+	return hr;
+}
+
 HRESULT BlackJawz::Rendering::Render::InitSamplerState()
 {
 	HRESULT hr = S_OK;
@@ -568,6 +609,82 @@ HRESULT BlackJawz::Rendering::Render::InitPlane()
 	return hr; // Return S_OK if everything succeeded
 }
 
+HRESULT BlackJawz::Rendering::Render::InitGBuffer()
+{
+	HRESULT hr = S_OK;
+
+	// Define formats for each G-Buffer texture.
+	// For the depth texture, use a typeless format so it can be bound as both a depth-stencil and a shader resource.
+	DXGI_FORMAT formats[] = {
+		DXGI_FORMAT_R8G8B8A8_UNORM,      // Albedo
+		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Normal
+		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Position
+		DXGI_FORMAT_R8G8B8A8_UNORM        // Specular 
+	};
+
+	for (int i = 0; i < 4; i++) // First four textures: Albedo, Normal, Position, Specular
+	{
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width = renderWidth;
+		textureDesc.Height = renderHeight;
+		textureDesc.MipLevels = 1;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = formats[i];
+		textureDesc.SampleDesc.Count = mSampleCount;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+		// Create Texture
+		hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, gBufferTextures[i].GetAddressOf());
+		if (FAILED(hr))
+			return hr;
+
+		// Create Render Target View (RTV)
+		hr = pID3D11Device.Get()->CreateRenderTargetView(gBufferTextures[i].Get(), nullptr, gBufferRTVs[i].GetAddressOf());
+		if (FAILED(hr))
+			return hr;
+
+		// Create Shader Resource View (SRV)
+		hr = pID3D11Device.Get()->CreateShaderResourceView(gBufferTextures[i].Get(), nullptr, gBufferSRVs[i].GetAddressOf());
+		if (FAILED(hr))
+			return hr;
+	}
+
+	// Create Depth Buffer with a typeless format so it can be used for both depth-stencil and as a shader resource.
+	D3D11_TEXTURE2D_DESC depthDesc = {};
+	depthDesc.Width = renderWidth;
+	depthDesc.Height = renderHeight;
+	depthDesc.MipLevels = 1;
+	depthDesc.ArraySize = 1;
+	depthDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Typeless format for depth
+	depthDesc.SampleDesc.Count = mSampleCount;
+	depthDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = pID3D11Device.Get()->CreateTexture2D(&depthDesc, nullptr, gBufferDepth.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	// Create the Depth Stencil View (DSV) with the appropriate depth format.
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT; // Depth stencil view format
+	dsvDesc.ViewDimension = (mSampleCount > 1) ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+	hr = pID3D11Device.Get()->CreateDepthStencilView(gBufferDepth.Get(), &dsvDesc, gBufferDepthDSV.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	// Create the Shader Resource View (SRV) for the depth texture using the shader-friendly format.
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // SRV format for sampling
+	srvDesc.ViewDimension = (mSampleCount > 1) ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	hr = pID3D11Device.Get()->CreateShaderResourceView(gBufferDepth.Get(), &srvDesc, gBufferDepthSRV.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
+	return hr;
+}
+
 HRESULT BlackJawz::Rendering::Render::Initialise()
 {
 	if (FAILED(InitDeviceAndSwapChain()))
@@ -586,6 +703,11 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	}
 
 	if (FAILED(InitShadersAndInputLayout()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitGBufferShadersAndInputLayout()))
 	{
 		return E_FAIL;
 	}
@@ -626,6 +748,11 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	}
 
 	if (FAILED(InitPlane()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitGBuffer()))
 	{
 		return E_FAIL;
 	}
@@ -708,86 +835,169 @@ void BlackJawz::Rendering::Render::BeginFrame()
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
 }
 
+void BlackJawz::Rendering::Render::BeginGBufferPass()
+{
+	// Set multiple render targets (Albedo, Normal, Position)
+	ID3D11RenderTargetView* renderTargets[4] = {
+		gBufferRTVs[0].Get(),
+		gBufferRTVs[1].Get(),
+		gBufferRTVs[2].Get(),
+		gBufferRTVs[3].Get()
+	};
+
+	// Set render targets with depth buffer
+	pImmediateContext->OMSetRenderTargets(4, renderTargets, gBufferDepthDSV.Get());
+
+	// Clear the G-Buffer textures
+	float clearColor[4] = { 0, 0, 0, 0 };
+	pImmediateContext->ClearRenderTargetView(gBufferRTVs[0].Get(), clearColor); // Albedo
+	pImmediateContext->ClearRenderTargetView(gBufferRTVs[1].Get(), clearColor); // Normal
+	pImmediateContext->ClearRenderTargetView(gBufferRTVs[2].Get(), clearColor); // Position
+	pImmediateContext->ClearRenderTargetView(gBufferRTVs[3].Get(), clearColor); // Specular
+	pImmediateContext->ClearDepthStencilView(gBufferDepthDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void BlackJawz::Rendering::Render::EndGBufferPass()
+{
+	// Unbind the G-buffer render targets
+	ID3D11RenderTargetView* nullRTV[3] = { nullptr, nullptr, nullptr };
+	pImmediateContext->OMSetRenderTargets(3, nullRTV, nullptr);
+}
+
+//void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
+//	BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem)
+//{
+//	transformSystem.Update();
+//	lightSystem.Update();
+//
+//	ConstantBuffer cb = {};
+//
+//	// Load View and Projection Matrices
+//	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
+//	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
+//
+//	cb.View = XMMatrixTranspose(view);
+//	cb.Projection = XMMatrixTranspose(projection);
+//
+//	// Set shaders and constant buffers
+//	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
+//	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
+//	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+//	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
+//	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+//	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+//
+//	// Global Camera Position
+//	cb.CameraPosition = cameraPosition;
+//	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+//
+//	// Process all lights before rendering
+//	if (!lightSystem.GetEntities().empty())
+//	{
+//		// Clear light buffer
+//		ZeroMemory(cb.lights, sizeof(cb.lights));
+//		cb.numLights = static_cast<int>(lightSystem.GetEntities().size());
+//
+//		if (!lightSystem.GetEntities().empty())
+//		{
+//			int lightIndex = 0;
+//
+//			for (auto lightEntity : lightSystem.GetEntities())
+//			{
+//				if (lightIndex >= MAX_LIGHTS) break; // Avoid exceeding the limit
+//
+//				auto& light = lightSystem.GetLight(lightEntity);
+//
+//				if (transformSystem.HasComponent(lightEntity))
+//				{
+//					auto& lightTransform = transformSystem.GetTransform(lightEntity);
+//
+//					XMFLOAT3 lightPosition = lightTransform.GetPosition();
+//					cb.lights[lightIndex].LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
+//
+//					if (light.Type == BlackJawz::Component::LightType::Directional ||
+//						light.Type == BlackJawz::Component::LightType::Spot)
+//					{
+//						XMFLOAT3 lightRotation = lightTransform.GetRotation();
+//						cb.lights[lightIndex].LightDirection = lightRotation;
+//					}
+//				}
+//
+//				cb.lights[lightIndex].LightType = static_cast<int>(light.Type);
+//				cb.lights[lightIndex].DiffuseLight = light.DiffuseLight;
+//				cb.lights[lightIndex].AmbientLight = light.AmbientLight;
+//				cb.lights[lightIndex].SpecularLight = light.SpecularLight;
+//
+//				cb.lights[lightIndex].SpecularPower = light.SpecularPower;
+//				cb.lights[lightIndex].Range = light.Range;
+//				cb.lights[lightIndex].Intensity = light.Intensity;
+//				cb.lights[lightIndex].Attenuation = light.Attenuation;
+//				cb.lights[lightIndex].SpotInnerCone = light.SpotInnerCone;
+//				cb.lights[lightIndex].SpotOuterCone = light.SpotOuterCone;
+//
+//				lightIndex++;
+//			}
+//		}
+//
+//		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+//	}
+//
+//	// Iterate over entities in the Appearance System 
+//	for (auto entity : appearanceSystem.GetEntities())
+//	{
+//		auto& appearance = appearanceSystem.GetAppearance(entity);
+//		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
+//		ComPtr<ID3D11ShaderResourceView> entityTexture = appearance.GetTexture();
+//
+//		// --- Update Transform for this entity ---
+//		if (transformSystem.HasComponent(entity))
+//		{
+//			auto& transform = transformSystem.GetTransform(entity);
+//			cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
+//		}
+//
+//		// Upload per-object constant buffer (transform, but not lighting)
+//		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+//
+//		// Bind Vertex and Index Buffers
+//		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
+//		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+//
+//		pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
+//
+//		// Draw the entity
+//		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);
+//	}
+//}
+
 void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
 	BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem)
 {
 	transformSystem.Update();
-	lightSystem.Update();
+
+	// Bind G-Buffer Render Targets
+	BeginGBufferPass();
 
 	ConstantBuffer cb = {};
 
 	// Load View and Projection Matrices
 	XMMATRIX view = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX projection = XMLoadFloat4x4(&projectionMatrix);
-
 	cb.View = XMMatrixTranspose(view);
 	cb.Projection = XMMatrixTranspose(projection);
-
-	// Set shaders and constant buffers
-	pImmediateContext.Get()->IASetInputLayout(pInputLayout.Get());
-	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pImmediateContext.Get()->VSSetShader(pVertexShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-	pImmediateContext.Get()->PSSetShader(pPixelShader.Get(), nullptr, 0);
-	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
-	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
-
-	// Global Camera Position
 	cb.CameraPosition = cameraPosition;
-	pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
-	// Process all lights before rendering
-	if (!lightSystem.GetEntities().empty())
-	{
-		// Clear light buffer
-		ZeroMemory(cb.lights, sizeof(cb.lights));
-		cb.numLights = static_cast<int>(lightSystem.GetEntities().size());
+	// Bind Geometry Shaders (Deferred GBuffer Pass)
+	pImmediateContext->IASetInputLayout(pGBufferInputLayout.Get());
+	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pImmediateContext->VSSetShader(pGBufferVertexShader.Get(), nullptr, 0);
+	pImmediateContext->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext->PSSetShader(pGBufferPixelShader.Get(), nullptr, 0);
+	pImmediateContext->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-		if (!lightSystem.GetEntities().empty())
-		{
-			int lightIndex = 0;
-
-			for (auto lightEntity : lightSystem.GetEntities())
-			{
-				if (lightIndex >= MAX_LIGHTS) break; // Avoid exceeding the limit
-
-				auto& light = lightSystem.GetLight(lightEntity);
-
-				if (transformSystem.HasComponent(lightEntity))
-				{
-					auto& lightTransform = transformSystem.GetTransform(lightEntity);
-		
-					XMFLOAT3 lightPosition = lightTransform.GetPosition();
-					cb.lights[lightIndex].LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
-
-					if (light.Type == BlackJawz::Component::LightType::Directional ||
-						light.Type == BlackJawz::Component::LightType::Spot)
-					{
-						XMFLOAT3 lightRotation = lightTransform.GetRotation();
-						cb.lights[lightIndex].LightDirection = lightRotation;
-					}
-				}
-
-				cb.lights[lightIndex].LightType = static_cast<int>(light.Type);
-				cb.lights[lightIndex].DiffuseLight = light.DiffuseLight;
-				cb.lights[lightIndex].AmbientLight = light.AmbientLight;
-				cb.lights[lightIndex].SpecularLight = light.SpecularLight;
-
-				cb.lights[lightIndex].SpecularPower = light.SpecularPower;
-				cb.lights[lightIndex].Range = light.Range;
-				cb.lights[lightIndex].Intensity = light.Intensity;
-				cb.lights[lightIndex].Attenuation = light.Attenuation;
-				cb.lights[lightIndex].SpotInnerCone = light.SpotInnerCone;
-				cb.lights[lightIndex].SpotOuterCone = light.SpotOuterCone;
-
-				lightIndex++;
-			}
-		}
-
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
-	}
-
-	// Iterate over entities in the Appearance System 
+	// Iterate over entities in the Appearance System (Geometry Pass)
 	for (auto entity : appearanceSystem.GetEntities())
 	{
 		auto& appearance = appearanceSystem.GetAppearance(entity);
@@ -801,18 +1011,29 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 			cb.World = XMMatrixTranspose(transform.GetWorldMatrix());
 		}
 
-		// Upload per-object constant buffer (transform, but not lighting)
-		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+		// Upload per-object constant buffer (transform)
+		pImmediateContext->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 		// Bind Vertex and Index Buffers
-		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
-		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+		pImmediateContext->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
+		pImmediateContext->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 
-		pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
+		pImmediateContext->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
 
-		// Draw the entity
-		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);
+		// Draw the entity (G-Buffer pass)
+		pImmediateContext->DrawIndexed(geo.IndicesCount, 0, 0);
 	}
+
+	// End G-Buffer Pass
+	EndGBufferPass();
+
+	// Lighting Pass
+	LightingPass();
+}
+
+void BlackJawz::Rendering::Render::LightingPass()
+{
+
 }
 
 void BlackJawz::Rendering::Render::EndFrame()

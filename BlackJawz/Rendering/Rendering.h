@@ -93,6 +93,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitRenderTargetView();
 		HRESULT InitViewPort();
 		HRESULT InitShadersAndInputLayout();
+		HRESULT InitGBufferShadersAndInputLayout();
 		HRESULT InitSamplerState();
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
@@ -101,6 +102,12 @@ namespace BlackJawz::Rendering
 		HRESULT InitCube();
 		HRESULT InitSphere();
 		HRESULT InitPlane();
+
+		// Deferred Shading
+		HRESULT InitGBuffer();
+		void BeginGBufferPass();
+		void EndGBufferPass();
+		void LightingPass();
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -163,5 +170,18 @@ namespace BlackJawz::Rendering
 		XMFLOAT3 cameraPosition = XMFLOAT3();
 
 		ID3D11ShaderResourceView* textureRV;
+
+		// Deferred Rendering
+		ComPtr<ID3D11Texture2D> gBufferTextures[4];      // Albedo, Normal, Position, Specular
+		ComPtr<ID3D11RenderTargetView> gBufferRTVs[4];   // Render Target Views
+		ComPtr<ID3D11ShaderResourceView> gBufferSRVs[4]; // Shader Resource Views
+
+		ComPtr<ID3D11Texture2D> gBufferDepth;           // Depth Texture
+		ComPtr<ID3D11DepthStencilView> gBufferDepthDSV; // Depth Stencil View
+		ComPtr<ID3D11ShaderResourceView> gBufferDepthSRV; // Depth SRV
+
+		ComPtr<ID3D11VertexShader> pGBufferVertexShader;
+		ComPtr<ID3D11PixelShader> pGBufferPixelShader;
+		ComPtr<ID3D11InputLayout> pGBufferInputLayout;
 	};
 }

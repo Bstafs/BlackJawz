@@ -18,6 +18,12 @@ struct Vertex
 	DirectX::XMFLOAT2 TexC;     // Vertex Texture Coordinates
 };
 
+struct VertexQuad
+{
+	XMFLOAT3 Position;
+	XMFLOAT2 TexC;
+};
+
 struct LightProperties
 {
 	XMFLOAT4 LightPosition;
@@ -94,6 +100,8 @@ namespace BlackJawz::Rendering
 		HRESULT InitViewPort();
 		HRESULT InitShadersAndInputLayout();
 		HRESULT InitGBufferShadersAndInputLayout();
+		HRESULT InitDeferredLightingShaders();
+		HRESULT InitPostProcessingShaders();
 		HRESULT InitSamplerState();
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
@@ -105,9 +113,10 @@ namespace BlackJawz::Rendering
 
 		// Deferred Shading
 		HRESULT InitGBuffer();
+		HRESULT InitDeferredQuad();
 		void BeginGBufferPass();
 		void EndGBufferPass();
-		void LightingPass();
+		void LightingPass(BlackJawz::System::LightSystem& lightSystem, BlackJawz::System::TransformSystem& transformSystem);
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -183,5 +192,17 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11VertexShader> pGBufferVertexShader;
 		ComPtr<ID3D11PixelShader> pGBufferPixelShader;
 		ComPtr<ID3D11InputLayout> pGBufferInputLayout;
+
+		ComPtr<ID3D11Buffer> pDeferredQuadVB;
+		ComPtr<ID3D11Buffer> pDeferredQuadIB;
+		ComPtr<ID3D11VertexShader> pPostProcessingVertexShader;
+		ComPtr<ID3D11PixelShader> pPostProcessingPixelShader;
+		ComPtr<ID3D11InputLayout> pPostProcessingInputLayout;
+
+		ComPtr<ID3D11PixelShader> pDeferredLightingPixelShader;
+
+		ID3D11Texture2D* g_pGbufferTargetLightingTextures = nullptr;
+		ID3D11RenderTargetView* g_pGbufferRenderLightingTargetView = nullptr;
+		ID3D11ShaderResourceView* g_pGbufferShaderResourceLightingView = nullptr;
 	};
 }

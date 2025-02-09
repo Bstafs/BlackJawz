@@ -184,5 +184,11 @@
     <FxCompile Include="Rendering\Shaders\GBufferPixelShader.hlsl">
       <Filter>Rendering\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Rendering\Shaders\DeferredLightingPixelShader.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Rendering\Shaders\PostProcessingShader.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

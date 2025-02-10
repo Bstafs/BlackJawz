@@ -15,7 +15,7 @@ struct VSInput
 struct VSOutput
 {
     float4 Position : SV_POSITION; // Clip-space position
-    float3 WorldPos : TEXCOORD1; // World-space position now in TEXCOORD1
+    float3 WorldPos : POSITION; 
     float3 Normal : NORMAL;
     float2 TexC : TEXCOORD;
 };

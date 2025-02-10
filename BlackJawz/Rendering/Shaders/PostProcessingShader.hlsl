@@ -16,8 +16,8 @@ struct PSInput
 PSInput VS(VSInput input)
 {
     PSInput output;
-    output.Position = output.Position;
-    output.TexC = output.TexC;
+    output.Position = float4(input.Position, 1.0f);
+    output.TexC = input.TexC;
     return output;
 }
 

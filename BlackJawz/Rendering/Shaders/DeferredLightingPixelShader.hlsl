@@ -46,22 +46,48 @@ static const int LIGHT_TYPE_POINT = 0;
 static const int LIGHT_TYPE_DIRECTIONAL = 1;
 static const int LIGHT_TYPE_SPOT = 2;
 
+struct VSInput
+{
+    float3 position : POSITION; 
+    float2 texcoord : TEXCOORD0;
+};
+
 struct PSInput
 {
     float4 Position : SV_POSITION;
-    float3 WorldPos : TEXCOORD1;
-    float3 Normal : NORMAL;
     float2 TexC : TEXCOORD0;
 };
+
+PSInput VS(VSInput input)
+{
+    PSInput output;
+    output.Position = float4(input.position.xy, 0.0, 1.0);
+    output.TexC = input.texcoord; 
+    return output;
+}
+
+void GetGBufferAttributes(in float2 screenPos, out float3 normal, out float3 diffuse, out float3 specular, out float3 position, out float specularPower)
+{
+    int3 sampleIndices = int3(screenPos.xy, 0);
+    normal = gNormal.Load(sampleIndices).xyz;
+    diffuse = gAlbedo.Load(sampleIndices).xyz;
+    float4 spec = gSpecular.Load(sampleIndices);
+    specular = spec.xyz;
+    specularPower = spec.w;
+    position = gPosition.Load(sampleIndices).xyz;
+}
 
 float4 PS(PSInput input) : SV_TARGET
 {
     // Sample from G-buffer
-    float4 textureColor = gAlbedo.Sample(samLinear, input.TexC); // Albedo
-    float3 normal = normalize(gNormal.Sample(samLinear, input.TexC).xyz); // Normal
-    float3 worldPos = gPosition.Sample(samLinear, input.TexC).xyz; // Position
-    float4 specular = gSpecular.Sample(samLinear, input.TexC); // Specular
-
+    float3 normal;
+    float3 worldPos;
+    float3 textureColor;
+    float3 specular;
+    float specularPower;
+    
+    GetGBufferAttributes(input.Position.xy, normal, textureColor, specular, worldPos, specularPower);
+    
     float3 finalColor = float3(0.0f, 0.0f, 0.0f);
 
     // Loop over each light
@@ -121,7 +147,7 @@ float4 PS(PSInput input) : SV_TARGET
         // Specular (Blinn-Phong)
         float3 viewDir = normalize(CameraPosition - worldPos);
         float3 halfwayDir = normalize(viewDir + lightDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0f), light.SpecularPower);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0f), specularPower);
         float3 specularColor = light.SpecularLight.rgb * spec * specular.rgb;
         
         // Add the diffuse and specular components, applying attenuation

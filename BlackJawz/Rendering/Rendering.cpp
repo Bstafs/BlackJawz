@@ -181,7 +181,6 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 	if (FAILED(hr)) {
 		throw std::runtime_error("Failed to create shader resource view.");
 	}
-
 }
 
 HRESULT BlackJawz::Rendering::Render::InitViewPort()
@@ -294,12 +293,37 @@ HRESULT BlackJawz::Rendering::Render::InitGBufferShadersAndInputLayout()
 		return hr;
 	}
 
+	// Define the input layout
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the input layout
+	hr = pID3D11Device.Get()->CreateInputLayout(layoutDesc, ARRAYSIZE(layoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), pGBufferInputLayout.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create input layout.\n");
+		return hr;
+	}
+
 	return hr;
 }
 
 HRESULT BlackJawz::Rendering::Render::InitDeferredLightingShaders()
 {
 	HRESULT hr = S_OK;
+
+	// Compile the vertex shader
+	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/DeferredLightingPixelShader.hlsl", "VS", "vs_5_0", &vsBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile vertex shader.\n");
+		return hr;
+	}
 
 	// Compile the pixel shader
 	Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
@@ -310,11 +334,34 @@ HRESULT BlackJawz::Rendering::Render::InitDeferredLightingShaders()
 		return hr;
 	}
 
+	// Create the vertex shader
+	hr = pID3D11Device.Get()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, pDeferredLightingVertexShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create vertex shader.\n");
+		return hr;
+	}
+
 	// Create the pixel shader
 	hr = pID3D11Device.Get()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, pDeferredLightingPixelShader.GetAddressOf());
 	if (FAILED(hr))
 	{
 		OutputDebugString(L"Failed to create pixel shader.\n");
+		return hr;
+	}
+
+	// Define the input layout
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the input layout
+	hr = pID3D11Device.Get()->CreateInputLayout(layoutDesc, ARRAYSIZE(layoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), pDeferredLightingInputLayout.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create input layout.\n");
 		return hr;
 	}
 
@@ -327,7 +374,7 @@ HRESULT BlackJawz::Rendering::Render::InitPostProcessingShaders()
 
 	// Compile the vertex shader
 	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
-	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/PostProcessingShader.hlsl", "MainVS", "vs_5_0", &vsBlob);
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/PostProcessingShader.hlsl", "VS", "vs_5_0", &vsBlob);
 	if (FAILED(hr))
 	{
 		OutputDebugString(L"Failed to compile vertex shader.\n");
@@ -711,6 +758,7 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 		textureDesc.ArraySize = 1;
 		textureDesc.Format = formats[i];
 		textureDesc.SampleDesc.Count = mSampleCount;
+		textureDesc.SampleDesc.Quality = 0;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
@@ -738,6 +786,7 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 	depthDesc.ArraySize = 1;
 	depthDesc.Format = DXGI_FORMAT_R32_TYPELESS; // Typeless format for depth
 	depthDesc.SampleDesc.Count = mSampleCount;
+	depthDesc.SampleDesc.Quality = 0;
 	depthDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
@@ -771,8 +820,9 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 	textureDesc.Height = renderHeight;
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	textureDesc.SampleDesc.Count = mSampleCount;
+	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	textureDesc.CPUAccessFlags = 0;
@@ -783,7 +833,8 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 		return hr;
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = textureDesc.Format;
+	ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
+	renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 
@@ -792,11 +843,30 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 		return hr;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	ZeroMemory(&shaderResourceViewDesc, sizeof(shaderResourceViewDesc));
 	shaderResourceViewDesc.Format = textureDesc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	hr = pID3D11Device.Get()->CreateShaderResourceView(g_pGbufferTargetLightingTextures, &shaderResourceViewDesc, &g_pGbufferShaderResourceLightingView);
+	if (FAILED(hr))
+		return hr;
+
+	//Blend state setup
+	D3D11_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0].BlendEnable = true;
+	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	pID3D11Device.Get()->CreateBlendState(&blendDesc, &blendState);
 
 	return hr;
 }
@@ -807,15 +877,15 @@ HRESULT BlackJawz::Rendering::Render::InitDeferredQuad()
 
 	VertexQuad v[] =
 	{
+		// First triangle
+		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) }, // Bottom-left
+		{ XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) },  // Top-left
+		{ XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) },   // Top-right
 
-	{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) },
-
-	{ XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) },
-
-	{ XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) },
-
-	{ XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) },
-
+		// Second triangle
+		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) }, // Bottom-left
+		{ XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) },   // Top-right
+		{ XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) },  // Bottom-right
 	};
 
 
@@ -847,8 +917,6 @@ HRESULT BlackJawz::Rendering::Render::InitDeferredQuad()
 		return hr;
 
 	return hr;
-
-
 }
 
 HRESULT BlackJawz::Rendering::Render::Initialise()
@@ -879,6 +947,11 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 	}
 
 	if (FAILED(InitDeferredLightingShaders()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitPostProcessingShaders()))
 	{
 		return E_FAIL;
 	}
@@ -973,7 +1046,7 @@ void BlackJawz::Rendering::Render::RenderToTexture(BlackJawz::System::TransformS
 	BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem)
 {
 	// Bind the render target texture
-	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), pDepthStencilView.Get());
+	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetTextureView.GetAddressOf(), nullptr);
 
 	// Set up the viewport for rendering to the texture
 	D3D11_VIEWPORT viewport = {};
@@ -1013,25 +1086,32 @@ void BlackJawz::Rendering::Render::BeginFrame()
 
 void BlackJawz::Rendering::Render::BeginGBufferPass()
 {
-	// Set render targets with depth buffer
-	pImmediateContext->OMSetRenderTargets(4, gBufferRTVs[0].GetAddressOf(), gBufferDepthDSV.Get());
+	ID3D11ShaderResourceView* nullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
+	pImmediateContext.Get()->PSSetShaderResources(0, 4, nullSRVs);
 
 	// Clear the G-Buffer textures
 	float clearColor[4] = { 0, 0, 0, 0 };
-	pImmediateContext->ClearRenderTargetView(gBufferRTVs[0].Get(), clearColor); // Albedo
-	pImmediateContext->ClearRenderTargetView(gBufferRTVs[1].Get(), clearColor); // Normal
-	pImmediateContext->ClearRenderTargetView(gBufferRTVs[2].Get(), clearColor); // Position
-	pImmediateContext->ClearRenderTargetView(gBufferRTVs[3].Get(), clearColor); // Specular
-	pImmediateContext->ClearRenderTargetView(g_pGbufferRenderLightingTargetView, clearColor);
-	pImmediateContext->ClearRenderTargetView(pRenderTargetView.Get(), clearColor);
-	pImmediateContext->ClearDepthStencilView(gBufferDepthDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[0].Get(), clearColor); // Albedo
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[1].Get(), clearColor); // Normal
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[2].Get(), clearColor); // Position
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[3].Get(), clearColor); // Specular
+	pImmediateContext.Get()->ClearRenderTargetView(g_pGbufferRenderLightingTargetView, Colors::Black);
+	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), Colors::Black);
+	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// Set render targets with depth buffer
+	pImmediateContext.Get()->OMSetRenderTargets(4, gBufferRTVs[0].GetAddressOf(), pDepthStencilView.Get());
 }
 
 void BlackJawz::Rendering::Render::EndGBufferPass()
 {
 	// Unbind the G-buffer render targets
 	ID3D11RenderTargetView* nullRTV[4] = { nullptr, nullptr, nullptr,nullptr };
-	pImmediateContext->OMSetRenderTargets(4, nullRTV, nullptr);
+	pImmediateContext.Get()->OMSetRenderTargets(4, nullRTV, nullptr);
+
+	// Unbind shader resource views
+	ID3D11ShaderResourceView* nullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
+	pImmediateContext.Get()->PSSetShaderResources(0, 4, nullSRVs);
 }
 
 //void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
@@ -1161,6 +1241,7 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	// Bind Geometry Shaders (Deferred GBuffer Pass)
 	pImmediateContext.Get()->IASetInputLayout(pGBufferInputLayout.Get());
 	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	pImmediateContext.Get()->VSSetShader(pGBufferVertexShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetShader(pGBufferPixelShader.Get(), nullptr, 0);
@@ -1199,64 +1280,64 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 
 	// Lighting Pass
 	LightingPass(lightSystem, transformSystem);
+
+	// Quad Pass
+	QuadPass();
 }
 
-void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& lightSystem, 
+void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& lightSystem,
 	BlackJawz::System::TransformSystem& transformSystem)
 {
 	lightSystem.Update();
 
-	pImmediateContext->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	pImmediateContext->OMSetRenderTargets(1, &g_pGbufferRenderLightingTargetView, pDepthStencilView.Get());
+	// Bind Lighting Render Target
+	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	pImmediateContext.Get()->OMSetRenderTargets(1, &g_pGbufferRenderLightingTargetView, pDepthStencilView.Get());
+
+	float blend[4] = { 1,1,1,1 };
+	pImmediateContext.Get()->OMSetBlendState(blendState, blend, 0xFFFFFFFF);
 
 	ConstantBuffer cb = {};
 
-   // Process all lights before rendering
+	// Process All Lights
 	if (!lightSystem.GetEntities().empty())
 	{
-		// Clear light buffer
 		ZeroMemory(cb.lights, sizeof(cb.lights));
 		cb.numLights = static_cast<int>(lightSystem.GetEntities().size());
 
-		if (!lightSystem.GetEntities().empty())
+		int lightIndex = 0;
+		for (auto lightEntity : lightSystem.GetEntities())
 		{
-			int lightIndex = 0;
+			if (lightIndex >= MAX_LIGHTS) break;
 
-			for (auto lightEntity : lightSystem.GetEntities())
+			auto& light = lightSystem.GetLight(lightEntity);
+
+			if (transformSystem.HasComponent(lightEntity))
 			{
-				if (lightIndex >= MAX_LIGHTS) break; // Avoid exceeding the limit
+				auto& lightTransform = transformSystem.GetTransform(lightEntity);
+				XMFLOAT3 lightPosition = lightTransform.GetPosition();
+				cb.lights[lightIndex].LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
 
-				auto& light = lightSystem.GetLight(lightEntity);
-
-				if (transformSystem.HasComponent(lightEntity))
+				if (light.Type == BlackJawz::Component::LightType::Directional ||
+					light.Type == BlackJawz::Component::LightType::Spot)
 				{
-					auto& lightTransform = transformSystem.GetTransform(lightEntity);
-
-					XMFLOAT3 lightPosition = lightTransform.GetPosition();
-					cb.lights[lightIndex].LightPosition = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0f);
-
-					if (light.Type == BlackJawz::Component::LightType::Directional ||
-						light.Type == BlackJawz::Component::LightType::Spot)
-					{
-						XMFLOAT3 lightRotation = lightTransform.GetRotation();
-						cb.lights[lightIndex].LightDirection = lightRotation;
-					}
+					cb.lights[lightIndex].LightDirection = lightTransform.GetRotation();
 				}
-
-				cb.lights[lightIndex].LightType = static_cast<int>(light.Type);
-				cb.lights[lightIndex].DiffuseLight = light.DiffuseLight;
-				cb.lights[lightIndex].AmbientLight = light.AmbientLight;
-				cb.lights[lightIndex].SpecularLight = light.SpecularLight;
-
-				cb.lights[lightIndex].SpecularPower = light.SpecularPower;
-				cb.lights[lightIndex].Range = light.Range;
-				cb.lights[lightIndex].Intensity = light.Intensity;
-				cb.lights[lightIndex].Attenuation = light.Attenuation;
-				cb.lights[lightIndex].SpotInnerCone = light.SpotInnerCone;
-				cb.lights[lightIndex].SpotOuterCone = light.SpotOuterCone;
-
-				lightIndex++;
 			}
+
+			cb.lights[lightIndex].LightType = static_cast<int>(light.Type);
+			cb.lights[lightIndex].DiffuseLight = light.DiffuseLight;
+			cb.lights[lightIndex].AmbientLight = light.AmbientLight;
+			cb.lights[lightIndex].SpecularLight = light.SpecularLight;
+
+			cb.lights[lightIndex].SpecularPower = light.SpecularPower;
+			cb.lights[lightIndex].Range = light.Range;
+			cb.lights[lightIndex].Intensity = light.Intensity;
+			cb.lights[lightIndex].Attenuation = light.Attenuation;
+			cb.lights[lightIndex].SpotInnerCone = light.SpotInnerCone;
+			cb.lights[lightIndex].SpotOuterCone = light.SpotOuterCone;
+
+			lightIndex++;
 		}
 
 		pImmediateContext.Get()->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
@@ -1266,29 +1347,53 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	UINT offset = 0;
 	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pDeferredQuadVB.GetAddressOf(), &stride, &offset);
 	pImmediateContext.Get()->IASetIndexBuffer(pDeferredQuadIB.Get(), DXGI_FORMAT_R16_UINT, 0);
-	pImmediateContext.Get()->IASetInputLayout(pPostProcessingInputLayout.Get());
+	pImmediateContext.Get()->IASetInputLayout(pDeferredLightingInputLayout.Get());
+
+	// Bind Deferred Lighting Shaders
+	pImmediateContext.Get()->VSSetShader(pDeferredLightingVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
 
 	pImmediateContext.Get()->PSSetShader(pDeferredLightingPixelShader.Get(), nullptr, 0);
 
-	pImmediateContext.Get()->PSSetShaderResources(0, 1, gBufferSRVs[0].GetAddressOf()); 
-	pImmediateContext.Get()->PSSetShaderResources(1, 1, gBufferSRVs[1].GetAddressOf()); 
-	pImmediateContext.Get()->PSSetShaderResources(2, 1, gBufferSRVs[2].GetAddressOf()); 
-	pImmediateContext.Get()->PSSetShaderResources(3, 1, gBufferSRVs[3].GetAddressOf()); 
+	// Bind G-Buffer Textures
+	pImmediateContext.Get()->PSSetShaderResources(0, 4, gBufferSRVs[0].GetAddressOf());
 
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	pImmediateContext.Get()->DrawIndexed(6, 0, 0);  
+	// Draw Fullscreen Quad
+	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
+}
 
-	// Quad Pass
+void BlackJawz::Rendering::Render::QuadPass()
+{
+	// Bind Backbuffer
+	float clearColor[4] = { 0, 0, 0, 1 }; // Black, for example
 	pImmediateContext.Get()->ClearDepthStencilView(pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	pImmediateContext.Get()->ClearRenderTargetView(pRenderTargetView.Get(), clearColor);
 	pImmediateContext.Get()->OMSetRenderTargets(1, pRenderTargetView.GetAddressOf(), pDepthStencilView.Get());
 
-	//pImmediateContext.Get()->VSSetShader(pPostProcessingVertexShader.Get(), nullptr, 0);
-	//pImmediateContext.Get()->PSSetShader(pPostProcessingPixelShader.Get(), nullptr, 0);
+	UINT stride = sizeof(VertexQuad);
+	UINT offset = 0;
+	// Set Quad Buffers
+	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pDeferredQuadVB.GetAddressOf(), &stride, &offset);
+	pImmediateContext.Get()->IASetIndexBuffer(pDeferredQuadIB.Get(), DXGI_FORMAT_R16_UINT, 0);
+	pImmediateContext.Get()->IASetInputLayout(pPostProcessingInputLayout.Get());
 
+	// Set Quad Shaders
+	pImmediateContext.Get()->VSSetShader(pPostProcessingVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetShader(pPostProcessingPixelShader.Get(), nullptr, 0);
+
+	// Bind Lighting Pass Result
 	pImmediateContext.Get()->PSSetShaderResources(0, 1, &g_pGbufferShaderResourceLightingView);
+	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
-	pImmediateContext.Get()->DrawIndexed(6, 0, 0);  
+	// Render Fullscreen Quad
+	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
+
+	// Reset States
+	pImmediateContext.Get()->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+	pImmediateContext.Get()->OMSetDepthStencilState(nullptr, 0);
 }
 
 void BlackJawz::Rendering::Render::EndFrame()

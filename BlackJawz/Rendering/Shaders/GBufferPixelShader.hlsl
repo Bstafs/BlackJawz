@@ -1,15 +1,9 @@
 struct PSInput
 {
     float4 Position : SV_POSITION;
-    float3 WorldPos : TEXCOORD1; // Changed from POSITION to TEXCOORD1
+    float3 WorldPos : POSITION; 
     float3 Normal : NORMAL;
     float2 TexC : TEXCOORD0;
-};
-
-cbuffer MaterialBuffer : register(b0)
-{
-    float4 AlbedoColor;
-    float4 SpecularColor;
 };
 
 Texture2D DiffuseTexture : register(t0);
@@ -37,6 +31,6 @@ GBufferOutput PS(PSInput input)
     output.Position = float4(input.WorldPos, 1.0f);
     
     output.Specular = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    
+       
     return output;
 }

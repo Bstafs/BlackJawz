@@ -117,6 +117,7 @@ namespace BlackJawz::Rendering
 		void BeginGBufferPass();
 		void EndGBufferPass();
 		void LightingPass(BlackJawz::System::LightSystem& lightSystem, BlackJawz::System::TransformSystem& transformSystem);
+		void QuadPass();
 
 	private:
 		ComPtr<ID3D11Device> pID3D11Device;
@@ -189,20 +190,28 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11DepthStencilView> gBufferDepthDSV; // Depth Stencil View
 		ComPtr<ID3D11ShaderResourceView> gBufferDepthSRV; // Depth SRV
 
+		// GBuffer 
 		ComPtr<ID3D11VertexShader> pGBufferVertexShader;
 		ComPtr<ID3D11PixelShader> pGBufferPixelShader;
 		ComPtr<ID3D11InputLayout> pGBufferInputLayout;
 
+		// Lighting
+		ComPtr<ID3D11VertexShader> pDeferredLightingVertexShader;
+		ComPtr<ID3D11PixelShader> pDeferredLightingPixelShader;
+		ComPtr<ID3D11InputLayout> pDeferredLightingInputLayout;
+
+		// Quad
 		ComPtr<ID3D11Buffer> pDeferredQuadVB;
 		ComPtr<ID3D11Buffer> pDeferredQuadIB;
 		ComPtr<ID3D11VertexShader> pPostProcessingVertexShader;
 		ComPtr<ID3D11PixelShader> pPostProcessingPixelShader;
 		ComPtr<ID3D11InputLayout> pPostProcessingInputLayout;
 
-		ComPtr<ID3D11PixelShader> pDeferredLightingPixelShader;
 
 		ID3D11Texture2D* g_pGbufferTargetLightingTextures = nullptr;
 		ID3D11RenderTargetView* g_pGbufferRenderLightingTargetView = nullptr;
 		ID3D11ShaderResourceView* g_pGbufferShaderResourceLightingView = nullptr;
+
+		ID3D11BlendState* blendState = nullptr;
 	};
 }

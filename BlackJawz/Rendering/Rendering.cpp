@@ -203,7 +203,6 @@ HRESULT BlackJawz::Rendering::Render::InitQuadView()
 {
 	HRESULT hr = S_OK;
 
-	// Describe the offscreen texture
 	// Create a render target texture
 	D3D11_TEXTURE2D_DESC textureDesc = {};
 	textureDesc.Width = renderWidth;
@@ -1402,8 +1401,6 @@ void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& tran
 	// GBuffer Pass
 	GBufferPass(transformSystem, appearanceSystem, lightSystem);
 
-	EndGBufferPass();
-
 	// Lighting Pass
 	LightingPass(lightSystem, transformSystem);
 
@@ -1474,6 +1471,8 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 		// Draw the entity (G-Buffer pass)
 		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);
 	}
+
+	EndGBufferPass();
 }
 
 void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& lightSystem,
@@ -1585,6 +1584,7 @@ void BlackJawz::Rendering::Render::QuadPass()
 
 	// Render Fullscreen Quad
 	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
+
 }
 
 void BlackJawz::Rendering::Render::EndFrame()
@@ -1596,7 +1596,7 @@ void BlackJawz::Rendering::Render::EndFrame()
 
 	// Set Shader Resource to Null / Clear
 	ID3D11ShaderResourceView* const shaderClear[1] = { nullptr };
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		pImmediateContext.Get()->PSSetShaderResources(i, 1, shaderClear);
 	}

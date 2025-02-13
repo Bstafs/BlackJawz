@@ -177,11 +177,13 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11Buffer> pSphereVertexBuffer;
 		ComPtr<ID3D11Buffer> pSphereIndexBuffer;
 		std::vector<Vertex> sphereVertices;
-		std::vector<WORD> sphereIndices;
+		std::vector<uint32_t> sphereIndices;
 
 		// Plane
 		ComPtr<ID3D11Buffer> pPlaneVertexBuffer;
 		ComPtr<ID3D11Buffer> pPlaneIndexBuffer;
+		uint32_t vertexCount;
+		uint32_t faceCount;
 
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pTransformBuffer;

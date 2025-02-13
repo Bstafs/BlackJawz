@@ -828,7 +828,7 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 		return hr;
 
 	// Create index buffer
-	WORD indices[] =
+	uint32_t indices[] =
 	{
 		3,1,0,
 		2,1,3,
@@ -850,7 +850,7 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	};
 
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(WORD) * 36;
+	bd.ByteWidth = sizeof(uint32_t) * 36;
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 	InitData.pSysMem = indices;
@@ -930,7 +930,7 @@ HRESULT BlackJawz::Rendering::Render::InitSphere()
 
 	// Index Buffer
 	ibDesc.Usage = D3D11_USAGE_DEFAULT;
-	ibDesc.ByteWidth = sizeof(WORD) * sphereIndices.size();
+	ibDesc.ByteWidth = sizeof(uint32_t) * sphereIndices.size();
 	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibDesc.CPUAccessFlags = 0;
 	ibDesc.MiscFlags = 0;
@@ -945,39 +945,87 @@ HRESULT BlackJawz::Rendering::Render::InitPlane()
 	HRESULT hr = S_OK;
 
 	// Create vertex buffer
-	Vertex vertices[] =
+	std::vector<Vertex> vertices;
+
+	float width = 20.0f;
+	float length = 20.0f;
+	uint32_t m = 50; 
+	uint32_t n = 50;
+
+	vertexCount = m * n;
+	faceCount = (m - 1) * (n - 1) * 2;
+
+	float halfWidth = 0.5f * width;
+	float halfDepth = 0.5f * length;
+
+	float dx = width / (n - 1);
+	float dz = length / (m - 1);
+
+	float du = 1.0f / (n - 1);
+	float dv = 1.0f / (m - 1);
+
+	vertices.resize(vertexCount);
+	float tileX = 5.0f; // Number of times to repeat in X
+	float tileY = 5.0f; // Number of times to repeat in Y
+	for (uint32_t i = 0; i < m; ++i)
 	{
-	{ {-1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
-	{ {-1.0f, 0.0f, -1.0f}, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
-	{ {1.0f, 0.0f, 1.0f  }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
-	{ {1.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} },
-	};
+		float z = halfDepth - i * dz;
+		for (uint32_t j = 0; j < n; ++j)
+		{
+			float x = -halfWidth + j * dx;
+
+			vertices[i * n + j].Position = XMFLOAT3(x, 0.0f, z);
+			vertices[i * n + j].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+
+			// Stretch texture over grid.
+			vertices[i * n + j].TexC.x = j * du * tileX;
+			vertices[i * n + j].TexC.y = i * dv * tileY;
+		}
+	}
 
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(Vertex) * 4;
+	bd.ByteWidth = sizeof(Vertex) * vertices.size();
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA initData = {};
+	initData.pSysMem = vertices.data();
 
-	D3D11_SUBRESOURCE_DATA InitData = {};
-	InitData.pSysMem = vertices;
-	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pPlaneVertexBuffer.GetAddressOf());
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &initData, pPlaneVertexBuffer.GetAddressOf());
 	if (FAILED(hr))
 		return hr;
 
 	// Create index buffer
-	WORD indices[] =
+	std::vector<uint32_t> indices;
+
+	indices.resize(faceCount * 3);
+
+	uint32_t k = 0;
+	for (uint32_t i = 0; i < m - 1; ++i)
 	{
-		0, 2, 1,
-		2, 3, 1,
-	};
+		for (uint32_t j = 0; j < n - 1; ++j)
+		{
+			// Indices for the first triangle
+			indices[k] = i * n + j;
+			indices[k + 1] = i * n + j + 1;
+			indices[k + 2] = (i + 1) * n + j;
+
+			// Indices for the second triangle
+			indices[k + 3] = (i + 1) * n + j;
+			indices[k + 4] = i * n + j + 1;
+			indices[k + 5] = (i + 1) * n + j + 1;
+
+			k += 6;
+		}
+	}
 
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(WORD) * 6;
+	bd.ByteWidth = sizeof(uint32_t) * indices.size();
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.CPUAccessFlags = 0;
-	InitData.pSysMem = indices;
-	hr = pID3D11Device.Get()->CreateBuffer(&bd, &InitData, pPlaneIndexBuffer.GetAddressOf());
+	initData.pSysMem = indices.data();
+
+	hr = pID3D11Device.Get()->CreateBuffer(&bd, &initData, pPlaneIndexBuffer.GetAddressOf());
 	if (FAILED(hr))
 		return hr;
 
@@ -1216,7 +1264,7 @@ BlackJawz::Component::Geometry BlackJawz::Rendering::Render::CreatePlaneGeometry
 	BlackJawz::Component::Geometry planeGeometry;
 	planeGeometry.pIndexBuffer = pPlaneIndexBuffer;
 	planeGeometry.pVertexBuffer = pPlaneVertexBuffer;
-	planeGeometry.IndicesCount = 6;
+	planeGeometry.IndicesCount = faceCount * 3;
 	planeGeometry.vertexBufferOffset = 0;
 	planeGeometry.vertexBufferStride = sizeof(Vertex);
 	return planeGeometry;
@@ -1464,7 +1512,7 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 
 		// Bind Vertex and Index Buffers
 		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
-		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 		pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
 

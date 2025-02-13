@@ -30,12 +30,8 @@ struct LightProperties
     float Padding03;
 };
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer LightsBuffer : register(b0)
 {
-    matrix World;
-    matrix View;
-    matrix Projection;
-
     LightProperties lights[MAX_LIGHTS];
     
     int numLights;
@@ -66,27 +62,13 @@ PSInput VS(VSInput input)
     return output;
 }
 
-void GetGBufferAttributes(in float2 screenPos, out float3 normal, out float3 diffuse, out float3 specular, out float3 position, out float specularPower)
-{
-    int3 sampleIndices = int3(screenPos.xy, 0);
-    normal = gNormal.Load(sampleIndices).xyz;
-    diffuse = gAlbedo.Load(sampleIndices).xyz;
-    float4 spec = gSpecular.Load(sampleIndices);
-    specular = spec.xyz;
-    specularPower = spec.w;
-    position = gPosition.Load(sampleIndices).xyz;
-}
-
 float4 PS(PSInput input) : SV_TARGET
 {
     // Sample from G-buffer
-    float3 normal;
-    float3 worldPos;
-    float3 textureColor;
-    float3 specular;
-    float specularPower;
-    
-    GetGBufferAttributes(input.Position.xy, normal, textureColor, specular, worldPos, specularPower);
+    float3 normal = gNormal.Sample(samLinear, input.TexC);
+    float3 worldPos = gPosition.Sample(samLinear, input.TexC);
+    float3 textureColor = gAlbedo.Sample(samLinear, input.TexC);
+    float3 specular = gSpecular.Sample(samLinear, input.TexC);
     
     float3 finalColor = float3(0.0f, 0.0f, 0.0f);
 
@@ -147,7 +129,7 @@ float4 PS(PSInput input) : SV_TARGET
         // Specular (Blinn-Phong)
         float3 viewDir = normalize(CameraPosition - worldPos);
         float3 halfwayDir = normalize(viewDir + lightDir);
-        float spec = pow(max(dot(normal, halfwayDir), 0.0f), specularPower);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0f), light.SpecularPower);
         float3 specularColor = light.SpecularLight.rgb * spec * specular.rgb;
         
         // Add the diffuse and specular components, applying attenuation

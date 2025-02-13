@@ -47,12 +47,15 @@ struct LightProperties
 	float Padding03;
 };
 
-struct ConstantBuffer
+struct TransformBuffer
 {
 	XMMATRIX World; 
 	XMMATRIX View;
 	XMMATRIX Projection;	
+};
 
+struct LightsBuffer
+{
 	LightProperties lights[MAX_LIGHTS];
 
 	int numLights;
@@ -78,8 +81,10 @@ namespace BlackJawz::Rendering
 
 		void RenderToTexture(BlackJawz::System::TransformSystem& transformSystem,
 			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem); // Render scene to the texture
-		ID3D11ShaderResourceView* GetShaderResourceView() const { return  pShaderResourceView.Get(); } // For ImGui::Image
+		ID3D11ShaderResourceView* GetShaderResourceView() const { return  pQuadRenderShaderResourceView.Get(); } // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
+		void ResizeGBuffer();
+		void ResizeDepthStencilBuffer();
 
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
@@ -96,7 +101,12 @@ namespace BlackJawz::Rendering
 
 	private:
 		HRESULT InitDeviceAndSwapChain();
-		HRESULT InitRenderTargetView();
+
+		HRESULT InitRenderTargetViews();
+		HRESULT InitBackBuffer();
+		HRESULT InitLightingView();
+		HRESULT InitQuadView();
+
 		HRESULT InitViewPort();
 		HRESULT InitShadersAndInputLayout();
 		HRESULT InitGBufferShadersAndInputLayout();
@@ -115,6 +125,8 @@ namespace BlackJawz::Rendering
 		HRESULT InitGBuffer();
 		HRESULT InitDeferredQuad();
 		void BeginGBufferPass();
+		void GBufferPass(BlackJawz::System::TransformSystem& transformSystem,
+			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem);
 		void EndGBufferPass();
 		void LightingPass(BlackJawz::System::LightSystem& lightSystem, BlackJawz::System::TransformSystem& transformSystem);
 		void QuadPass();
@@ -172,7 +184,8 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11Buffer> pPlaneIndexBuffer;
 
 		// Constant Buffer
-		ComPtr<ID3D11Buffer> pConstantBuffer;
+		ComPtr<ID3D11Buffer> pTransformBuffer;
+		ComPtr<ID3D11Buffer> pLightsBuffer;
 
 		// Camera
 		XMFLOAT4X4 viewMatrix = XMFLOAT4X4();
@@ -186,10 +199,6 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11RenderTargetView> gBufferRTVs[4];   // Render Target Views
 		ComPtr<ID3D11ShaderResourceView> gBufferSRVs[4]; // Shader Resource Views
 
-		ComPtr<ID3D11Texture2D> gBufferDepth;           // Depth Texture
-		ComPtr<ID3D11DepthStencilView> gBufferDepthDSV; // Depth Stencil View
-		ComPtr<ID3D11ShaderResourceView> gBufferDepthSRV; // Depth SRV
-
 		// GBuffer 
 		ComPtr<ID3D11VertexShader> pGBufferVertexShader;
 		ComPtr<ID3D11PixelShader> pGBufferPixelShader;
@@ -200,6 +209,10 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11PixelShader> pDeferredLightingPixelShader;
 		ComPtr<ID3D11InputLayout> pDeferredLightingInputLayout;
 
+		ComPtr<ID3D11Texture2D> g_pGbufferTargetLightingTextures;
+		ComPtr<ID3D11RenderTargetView> g_pGbufferRenderLightingTargetView;
+		ComPtr<ID3D11ShaderResourceView> g_pGbufferShaderResourceLightingView;
+
 		// Quad
 		ComPtr<ID3D11Buffer> pDeferredQuadVB;
 		ComPtr<ID3D11Buffer> pDeferredQuadIB;
@@ -207,10 +220,9 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11PixelShader> pPostProcessingPixelShader;
 		ComPtr<ID3D11InputLayout> pPostProcessingInputLayout;
 
-
-		ID3D11Texture2D* g_pGbufferTargetLightingTextures = nullptr;
-		ID3D11RenderTargetView* g_pGbufferRenderLightingTargetView = nullptr;
-		ID3D11ShaderResourceView* g_pGbufferShaderResourceLightingView = nullptr;
+		ComPtr<ID3D11Texture2D> pQuadRenderTargetTexture;
+		ComPtr<ID3D11RenderTargetView> pQuadRenderTargetView;
+		ComPtr<ID3D11ShaderResourceView> pQuadRenderShaderResourceView;
 
 		ID3D11BlendState* blendState = nullptr;
 	};

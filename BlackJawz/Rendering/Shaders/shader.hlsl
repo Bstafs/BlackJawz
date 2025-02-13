@@ -27,15 +27,19 @@ struct LightProperties
     float Padding03;
 };
 
-cbuffer ConstantBuffer : register(b0)
+cbuffer TransformBuffer : register(b0)
 {
     matrix World;
     matrix View;
     matrix Projection;
+}
 
-    LightProperties lights[MAX_LIGHTS]; 
+
+cbuffer LightsBuffer : register(b1)
+{
+    LightProperties lights[MAX_LIGHTS];
     
-    int numLights; 
+    int numLights;
     float3 CameraPosition;
 }
 

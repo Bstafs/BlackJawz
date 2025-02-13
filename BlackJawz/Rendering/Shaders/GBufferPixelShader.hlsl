@@ -22,7 +22,7 @@ GBufferOutput PS(PSInput input)
     GBufferOutput output;
 
     // Store Albedo (sample from texture)
-    output.Albedo = float4(1.0f, 1.0f, 1.0f, 1.0f) *  DiffuseTexture.Sample(samLinear, input.TexC);
+    output.Albedo = DiffuseTexture.Sample(samLinear, input.TexC);
 
     // Store Normal (normalized to make sure it's unit-length)
     output.Normal = float4(normalize(input.Normal), 1.0f);
@@ -30,7 +30,7 @@ GBufferOutput PS(PSInput input)
     // Store World Position
     output.Position = float4(input.WorldPos, 1.0f);
     
-    output.Specular = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    output.Specular = float4(1.0f, 1.0f, 1.0f, 32.0f);
        
     return output;
 }

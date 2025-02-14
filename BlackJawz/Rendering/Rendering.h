@@ -182,8 +182,8 @@ namespace BlackJawz::Rendering
 		// Plane
 		ComPtr<ID3D11Buffer> pPlaneVertexBuffer;
 		ComPtr<ID3D11Buffer> pPlaneIndexBuffer;
-		uint32_t vertexCount;
-		uint32_t faceCount;
+		std::vector<Vertex> gridVertices;
+		std::vector<uint32_t> gridIndices;
 
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pTransformBuffer;

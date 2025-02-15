@@ -4,9 +4,12 @@ struct PSInput
     float3 WorldPos : POSITION; 
     float3 Normal : NORMAL;
     float2 TexC : TEXCOORD0;
+    float3 Tangent : TANGENT; 
+    float3x3 TBN_MATRIX : TBN_MATRIX; 
 };
 
 Texture2D DiffuseTexture : register(t0);
+Texture2D NormalTexture : register(t1);
 SamplerState samLinear : register(s0);
 
 struct GBufferOutput
@@ -25,7 +28,11 @@ GBufferOutput PS(PSInput input)
     output.Albedo = DiffuseTexture.Sample(samLinear, input.TexC);
 
     // Store Normal (normalized to make sure it's unit-length)
-    output.Normal = float4(normalize(input.Normal), 1.0f);
+    float3 sampledNormal = NormalTexture.Sample(samLinear, input.TexC).xyz;
+    sampledNormal = normalize(sampledNormal * 2.0f - 1.0f);
+    float3 worldNormal = normalize(mul(sampledNormal, input.TBN_MATRIX));
+    
+    output.Normal = float4(worldNormal, 1.0f);
 
     // Store World Position
     output.Position = float4(input.WorldPos, 1.0f);

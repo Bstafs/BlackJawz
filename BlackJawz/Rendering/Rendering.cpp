@@ -217,7 +217,7 @@ HRESULT BlackJawz::Rendering::Render::InitQuadView()
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = 0;
 
-	 hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pQuadRenderTargetTexture.GetAddressOf());
+	hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, pQuadRenderTargetTexture.GetAddressOf());
 	if (FAILED(hr))
 		throw std::runtime_error("Failed to create offscreen texture.");
 
@@ -289,7 +289,7 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 	}
 
 	// Lighting Pass
-	 hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, g_pGbufferTargetLightingTextures.GetAddressOf());
+	hr = pID3D11Device.Get()->CreateTexture2D(&textureDesc, nullptr, g_pGbufferTargetLightingTextures.GetAddressOf());
 	if (FAILED(hr))
 	{
 		throw std::runtime_error("Failed to resize render target texture.");
@@ -532,6 +532,7 @@ HRESULT BlackJawz::Rendering::Render::InitGBufferShadersAndInputLayout()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	// Create the input layout
@@ -782,37 +783,44 @@ HRESULT BlackJawz::Rendering::Render::InitCube()
 	HRESULT hr = S_OK;
 
 	// Create vertex buffer
+	// Vertex Position, Vertex Normal, Vertex UV, Vertex Tangent
 	Vertex vertices[] =
 	{
-		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {1.0f, 0.0f} },
-		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
-		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 1.0f} },
-		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f	 }, {1.0f, 1.0f} },
+		// Top 
+		{{-1.0f, 1.0f, -1.0f }, { 0.0f, 1.0f,  0.0f }, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, 1.0f, -1.0f }, { 0.0f, 1.0f,  0.0f }, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, 1.0f,  1.0f }, { 0.0f, 1.0f,  0.0f }, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
+		{{-1.0f, 1.0f,  1.0f }, { 0.0f, 1.0f,  0.0f }, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
 
-		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 0.0f} },
-		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 0.0f} },
-		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
-		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
+		// Bottom
+		{{-1.0f, -1.0f, -1.0f}, { 0.0f, -1.0f,  0.0f }, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, -1.0f, -1.0f}, { 0.0f, -1.0f,  0.0f }, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, -1.0f,  1.0f}, { 0.0f, -1.0f,  0.0f }, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
+		{{-1.0f, -1.0f,  1.0f}, { 0.0f, -1.0f,  0.0f }, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
 
-		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {0.0f, 1.0f} },
-		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {1.0f, 1.0f} },
-		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {1.0f, 0.0f} },
-		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f   }, {0.0f, 0.0f} },
+		// Left
+		{{-1.0f, -1.0f,  1.0f}, {-1.0f,  0.0f,  0.0f }, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} },
+		{{-1.0f, -1.0f, -1.0f}, {-1.0f,  0.0f,  0.0f }, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} },
+		{{-1.0f,  1.0f, -1.0f}, {-1.0f,  0.0f,  0.0f }, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} },
+		{{-1.0f,  1.0f,  1.0f}, {-1.0f,  0.0f,  0.0f }, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} },
 
-		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {1.0f, 1.0f} },
-		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {0.0f, 1.0f} },
-		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {0.0f, 0.0f} },
-		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {1.0f, 0.0f} },
+		// Right
+		{{ 1.0f, -1.0f,  1.0f}, { 1.0f,  0.0f,  0.0f }, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f} },
+		{{ 1.0f, -1.0f, -1.0f}, { 1.0f,  0.0f,  0.0f }, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f} },
+		{{ 1.0f,  1.0f, -1.0f}, { 1.0f,  0.0f,  0.0f }, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f} },
+		{{ 1.0f,  1.0f,  1.0f}, { 1.0f,  0.0f,  0.0f }, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} },
 
-		{{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f }, {0.0f, 1.0f} },
-		{{1.0f, -1.0f, -1.0f }, {1.0f, -1.0f, -1.0f  }, {1.0f, 1.0f} },
-		{{1.0f, 1.0f, -1.0f  }, {1.0f, 1.0f, -1.0f   }, {1.0f, 0.0f} },
-		{{-1.0f, 1.0f, -1.0f }, {-1.0f, 1.0f, -1.0f  }, {0.0f, 0.0f} },
+		// Front
+		{{-1.0f, -1.0f, -1.0f}, { 0.0f,  0.0f, -1.0f }, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, -1.0f, -1.0f}, { 0.0f,  0.0f, -1.0f }, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f} },
+		{{ 1.0f,  1.0f, -1.0f}, { 0.0f,  0.0f, -1.0f }, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
+		{{-1.0f,  1.0f, -1.0f}, { 0.0f,  0.0f, -1.0f }, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f} },
 
-		{{-1.0f, -1.0f, 1.0f }, {-1.0f, -1.0f, 1.0f  }, {1.0f, 1.0f} },
-		{{1.0f, -1.0f, 1.0f  }, {1.0f, -1.0f, 1.0f   }, {0.0f, 1.0f} },
-		{{1.0f, 1.0f, 1.0f   }, {1.0f, 1.0f, 1.0f    }, {0.0f, 0.0f} },
-		{{-1.0f, 1.0f, 1.0f  }, {-1.0f, 1.0f, 1.0f   }, {1.0f, 0.0f} },
+		// Back
+		{{-1.0f, -1.0f,  1.0f}, { 0.0f,  0.0f,  1.0f }, {1.0f, 1.0f}, {-1.0f, 0.0f, 0.0f} },
+		{{ 1.0f, -1.0f,  1.0f}, { 0.0f,  0.0f,  1.0f }, {0.0f, 1.0f}, {-1.0f, 0.0f, 0.0f} },
+		{{ 1.0f,  1.0f,  1.0f}, { 0.0f,  0.0f,  1.0f }, {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} },
+		{{-1.0f,  1.0f,  1.0f}, { 0.0f,  0.0f,  1.0f }, {1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f} },
 	};
 
 	D3D11_BUFFER_DESC bd = {};
@@ -866,76 +874,145 @@ HRESULT BlackJawz::Rendering::Render::InitSphere()
 	HRESULT hr = S_OK;
 
 	float radius = 1.0f;
-	float numSubdivisions = 32.0f;
+	int numSubdivisions = 32;
 
 	const float pi = XM_PI;
 	const float twoPi = 2.0f * pi;
 
 	// Generate vertices
-	for (int i = 0; i <= numSubdivisions; ++i)
+	for (int i = 0; i < numSubdivisions; ++i)
 	{
-		// Golden Ratio
-		float phi = pi * static_cast<float>(i) / numSubdivisions;
+		float phi = pi * static_cast<float>(i) / (numSubdivisions - 1);
 
-		for (int j = 0; j <= numSubdivisions; ++j)
+		for (int j = 0; j < numSubdivisions; ++j)
 		{
-			float theta = twoPi * static_cast<float>(j) / numSubdivisions;
+			float theta = twoPi * static_cast<float>(j) / (numSubdivisions - 1);
 
 			Vertex vertex;
 
-			vertex.Position.x = radius * sin(phi) * cos(theta);
-			vertex.Position.y = radius * cos(phi);
-			vertex.Position.z = radius * sin(phi) * sin(theta);
+			// Position
+			vertex.Position.x = radius * sinf(phi) * cosf(theta);
+			vertex.Position.y = radius * cosf(phi);
+			vertex.Position.z = radius * sinf(phi) * sinf(theta);
 
-			vertex.Normal.x = vertex.Position.x / radius;
-			vertex.Normal.y = vertex.Position.y / radius;
-			vertex.Normal.z = vertex.Position.z / radius;
+			// Normal
+			XMStoreFloat3(&vertex.Normal, XMVector3Normalize(XMLoadFloat3(&vertex.Position)));
 
-			vertex.TexC.x = static_cast<float>(j) / numSubdivisions;
-			vertex.TexC.y = static_cast<float>(i) / numSubdivisions;
+			// Texture coordinates
+			vertex.TexC.x = static_cast<float>(j) / (numSubdivisions - 1);
+			vertex.TexC.y = static_cast<float>(i) / (numSubdivisions - 1);
+
+			// Default tangent, will be computed later
+			vertex.Tangent = XMFLOAT3(1.0f, 0.0f, 0.0f);
 
 			sphereVertices.push_back(vertex);
 		}
 	}
 
 	// Generate indices
-	for (int i = 0; i < numSubdivisions; ++i) {
-		for (int j = 0; j < numSubdivisions; ++j) {
-			int v0 = i * (numSubdivisions + 1) + j;
+	for (int i = 0; i < numSubdivisions - 1; ++i) {
+		for (int j = 0; j < numSubdivisions - 1; ++j) {
+			int v0 = i * numSubdivisions + j;
 			int v1 = v0 + 1;
-			int v2 = (i + 1) * (numSubdivisions + 1) + j;
+			int v2 = (i + 1) * numSubdivisions + j;
 			int v3 = v2 + 1;
 
+			// Triangle 1
 			sphereIndices.push_back(v0);
 			sphereIndices.push_back(v1);
 			sphereIndices.push_back(v2);
 
+			// Triangle 2
 			sphereIndices.push_back(v1);
 			sphereIndices.push_back(v3);
 			sphereIndices.push_back(v2);
 		}
 	}
 
-	D3D11_BUFFER_DESC vbDesc, ibDesc;
-	D3D11_SUBRESOURCE_DATA vbData, ibData;
+	// Compute tangents
+	std::vector<XMFLOAT3> tempTangents(sphereVertices.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
 
-	// Vertex Buffer
+	for (size_t i = 0; i < sphereIndices.size(); i += 3)
+	{
+		int i0 = sphereIndices[i];
+		int i1 = sphereIndices[i + 1];
+		int i2 = sphereIndices[i + 2];
+
+		Vertex& v0 = sphereVertices[i0];
+		Vertex& v1 = sphereVertices[i1];
+		Vertex& v2 = sphereVertices[i2];
+
+		XMVECTOR pos0 = XMLoadFloat3(&v0.Position);
+		XMVECTOR pos1 = XMLoadFloat3(&v1.Position);
+		XMVECTOR pos2 = XMLoadFloat3(&v2.Position);
+
+		XMVECTOR uv0 = XMLoadFloat2(&v0.TexC);
+		XMVECTOR uv1 = XMLoadFloat2(&v1.TexC);
+		XMVECTOR uv2 = XMLoadFloat2(&v2.TexC);
+
+		// Compute edges
+		XMVECTOR edge1 = XMVectorSubtract(pos1, pos0);
+		XMVECTOR edge2 = XMVectorSubtract(pos2, pos0);
+
+		XMVECTOR deltaUV1 = XMVectorSubtract(uv1, uv0);
+		XMVECTOR deltaUV2 = XMVectorSubtract(uv2, uv0);
+
+		float du1 = XMVectorGetX(deltaUV1);
+		float dv1 = XMVectorGetY(deltaUV1);
+		float du2 = XMVectorGetX(deltaUV2);
+		float dv2 = XMVectorGetY(deltaUV2);
+
+		float determinant = (du1 * dv2 - du2 * dv1);
+		float f = (fabs(determinant) < 1e-6f) ? 1.0f : (1.0f / determinant);
+
+		XMFLOAT3 tangent;
+		tangent.x = f * (dv2 * XMVectorGetX(edge1) - dv1 * XMVectorGetX(edge2));
+		tangent.y = f * (dv2 * XMVectorGetY(edge1) - dv1 * XMVectorGetY(edge2));
+		tangent.z = f * (dv2 * XMVectorGetZ(edge1) - dv1 * XMVectorGetZ(edge2));
+
+		XMVECTOR tangentVec = XMVector3Normalize(XMLoadFloat3(&tangent));
+
+		// Accumulate tangents
+		XMStoreFloat3(&tempTangents[i0], XMVectorAdd(XMLoadFloat3(&tempTangents[i0]), tangentVec));
+		XMStoreFloat3(&tempTangents[i1], XMVectorAdd(XMLoadFloat3(&tempTangents[i1]), tangentVec));
+		XMStoreFloat3(&tempTangents[i2], XMVectorAdd(XMLoadFloat3(&tempTangents[i2]), tangentVec));
+	}
+
+	// Normalize and orthogonalize tangents
+	for (size_t i = 0; i < sphereVertices.size(); ++i)
+	{
+		XMVECTOR normal = XMLoadFloat3(&sphereVertices[i].Normal);
+		XMVECTOR tangent = XMVector3Normalize(XMLoadFloat3(&tempTangents[i]));
+
+		tangent = XMVector3Normalize(XMVectorSubtract(tangent, XMVectorScale(normal, XMVector3Dot(normal, tangent).m128_f32[0])));
+		XMStoreFloat3(&sphereVertices[i].Tangent, tangent);
+	}
+
+	// Create Vertex Buffer
+	D3D11_BUFFER_DESC vbDesc{};
 	vbDesc.Usage = D3D11_USAGE_DEFAULT;
-	vbDesc.ByteWidth = sizeof(Vertex) * sphereVertices.size();
+	vbDesc.ByteWidth = sizeof(Vertex) * static_cast<UINT>(sphereVertices.size());
 	vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbDesc.CPUAccessFlags = 0;
-	vbDesc.MiscFlags = 0;
-	vbData.pSysMem = sphereVertices.data();
-	pID3D11Device.Get()->CreateBuffer(&vbDesc, &vbData, pSphereVertexBuffer.GetAddressOf());
 
-	// Index Buffer
+	D3D11_SUBRESOURCE_DATA vbData{};
+	vbData.pSysMem = sphereVertices.data();
+
+	hr = pID3D11Device->CreateBuffer(&vbDesc, &vbData, pSphereVertexBuffer.GetAddressOf());
+	if (FAILED(hr)) return hr;
+
+	// Create Index Buffer
+	D3D11_BUFFER_DESC ibDesc{};
 	ibDesc.Usage = D3D11_USAGE_DEFAULT;
-	ibDesc.ByteWidth = sizeof(uint32_t) * sphereIndices.size();
+	ibDesc.ByteWidth = sizeof(uint32_t) * static_cast<UINT>(sphereIndices.size());
 	ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibDesc.CPUAccessFlags = 0;
-	ibDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA ibData{};
 	ibData.pSysMem = sphereIndices.data();
-	pID3D11Device.Get()->CreateBuffer(&ibDesc, &ibData, pSphereIndexBuffer.GetAddressOf());
+
+	hr = pID3D11Device->CreateBuffer(&ibDesc, &ibData, pSphereIndexBuffer.GetAddressOf());
+	if (FAILED(hr)) return hr;
 
 	return hr;
 }
@@ -972,14 +1049,14 @@ HRESULT BlackJawz::Rendering::Render::InitPlane()
 			XMFLOAT3 p3(-halfWidth + (j + 1) * dx, 0.0f, halfDepth - (i + 1) * dz);
 
 			// Triangle 1
-			gridVertices.push_back({ p0, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) });
-			gridVertices.push_back({ p1, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) });
-			gridVertices.push_back({ p2, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) });
+			gridVertices.push_back({ p0, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
+			gridVertices.push_back({ p1, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
+			gridVertices.push_back({ p2, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
 
 			// Triangle 2
-			gridVertices.push_back({ p2, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) });
-			gridVertices.push_back({ p1, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) });
-			gridVertices.push_back({ p3, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) });
+			gridVertices.push_back({ p2, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
+			gridVertices.push_back({ p1, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
+			gridVertices.push_back({ p3, XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) });
 
 			gridIndices.push_back(k);
 			gridIndices.push_back(k + 1);
@@ -1483,7 +1560,8 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 	{
 		auto& appearance = appearanceSystem.GetAppearance(entity);
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
-		ComPtr<ID3D11ShaderResourceView> entityTexture = appearance.GetTexture();
+		ComPtr<ID3D11ShaderResourceView> entityTextureDiffuse = appearance.GetTextureDiffuse();
+		ComPtr<ID3D11ShaderResourceView> entityTextureNormal = appearance.GetTextureNormal();
 
 		// --- Update Transform for this entity ---
 		if (transformSystem.HasComponent(entity))
@@ -1499,7 +1577,11 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 		pImmediateContext.Get()->IASetVertexBuffers(0, 1, geo.pVertexBuffer.GetAddressOf(), &geo.vertexBufferStride, &geo.vertexBufferOffset);
 		pImmediateContext.Get()->IASetIndexBuffer(geo.pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-		pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTexture.GetAddressOf());
+		if (appearance.HasTextureDiffuse())
+			pImmediateContext.Get()->PSSetShaderResources(0, 1, entityTextureDiffuse.GetAddressOf());
+		
+		if (appearance.HasTextureNormal())
+		pImmediateContext.Get()->PSSetShaderResources(1, 1, entityTextureNormal.GetAddressOf());
 
 		// Draw the entity (G-Buffer pass)
 		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);

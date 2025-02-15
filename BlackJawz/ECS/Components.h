@@ -47,22 +47,40 @@ namespace BlackJawz::Component
 		// Constructor to initialize with Geometry data
 		Appearance() = default;
 
-		Appearance(Geometry geo, ID3D11ShaderResourceView* texture) : objectGeometry(geo), textureData(texture) {}
+		Appearance(Geometry geo)
+			: objectGeometry(geo) {}
+	
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture)
+			: objectGeometry(geo), textureDataDiffuse(diffuseTexture) {}
+
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture) : 
+			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture) {}
 
 		// Getter to access the Geometry data
 		Geometry GetGeometry() const { return objectGeometry; }
 		Geometry objectGeometry;  // Store the geometry data
 
-		ComPtr<ID3D11ShaderResourceView> GetTexture() const { return textureData; }
-		bool HasTexture()
+		ComPtr<ID3D11ShaderResourceView> GetTextureDiffuse() const { return textureDataDiffuse; }
+		ComPtr<ID3D11ShaderResourceView> GetTextureNormal() const { return textureDataNormal; }
+
+		bool HasTextureDiffuse()
 		{
-			if (textureData != nullptr)
+			if (textureDataDiffuse != nullptr)
+			{
+				return true;
+			}
+		}
+		bool HasTextureNormal()
+		{
+			if (textureDataNormal != nullptr)
 			{
 				return true;
 			}
 		}
 
-		ComPtr<ID3D11ShaderResourceView> textureData;
+
+		ComPtr<ID3D11ShaderResourceView> textureDataDiffuse;
+		ComPtr<ID3D11ShaderResourceView> textureDataNormal;
 	};
 
 	enum class LightType : int

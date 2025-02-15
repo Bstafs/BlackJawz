@@ -16,6 +16,7 @@ struct Vertex
 	DirectX::XMFLOAT3 Position; // Vertex Position
 	DirectX::XMFLOAT3 Normal;   // Vertex Normals
 	DirectX::XMFLOAT2 TexC;     // Vertex Texture Coordinates
+	DirectX::XMFLOAT3 Tangent;     // Vertex Tangents
 };
 
 struct VertexQuad

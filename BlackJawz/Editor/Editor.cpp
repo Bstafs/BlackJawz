@@ -243,7 +243,7 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 				);
 			}
 
-			auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTexture().Get());
+			auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureDiffuse().Get());
 			auto textureVec = builder.CreateVector(textureData);
 			auto textureOffset = ECS::CreateTexture(builder, textureVec);
 
@@ -937,9 +937,11 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			BlackJawz::Component::Geometry cubeGeo = renderer.CreateCubeGeometry();
 
-			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &tex);
-			BlackJawz::Component::Appearance appearance(cubeGeo, tex);
+			ID3D11ShaderResourceView* texDiffuse;
+			ID3D11ShaderResourceView* texNormal;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &texDiffuse);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_nmap.dds", nullptr, &texNormal);
+			BlackJawz::Component::Appearance appearance(cubeGeo, texDiffuse, texNormal);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
@@ -965,10 +967,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			BlackJawz::Component::Geometry sphereGeo = renderer.CreateSphereGeometry();
 
-			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &tex);
+			ID3D11ShaderResourceView* texDiffuse;
+			ID3D11ShaderResourceView* texNormal;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &texDiffuse);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_nmap.dds", nullptr, &texNormal);
 
-			BlackJawz::Component::Appearance appearance(sphereGeo, tex);
+			BlackJawz::Component::Appearance appearance(sphereGeo, texDiffuse, texNormal);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
@@ -995,10 +999,12 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			BlackJawz::Component::Geometry planeGeo = renderer.CreatePlaneGeometry();
 
-			ID3D11ShaderResourceView* tex;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\tile.dds", nullptr, &tex);
+			ID3D11ShaderResourceView* texDiffuse;
+			ID3D11ShaderResourceView* texNormal;
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\tile.dds", nullptr, &texDiffuse);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\tile_nmap.dds", nullptr, &texNormal);
 
-			BlackJawz::Component::Appearance appearance(planeGeo, tex);
+			BlackJawz::Component::Appearance appearance(planeGeo, texDiffuse, texNormal);
 			appearanceArray.InsertData(newEntity, appearance);
 
 			std::bitset<32> signature;
@@ -1096,16 +1102,20 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragInt("Stride", &stride, 0.1f);
 			ImGui::DragInt("Offset", &offset, 0.1f);
 
-			if (appearance->HasTexture())
+			if (appearance->HasTextureDiffuse())
 			{			
 				ImGui::Text("Diffuse Map:");
 				ImGui::SameLine(115);
 				ImGui::Text("Normal Map:");
 
 				// Here we assume a size of 100x100 pixels, adjust as needed.
-				ImGui::Image((ImTextureID)appearance->GetTexture().Get(), ImVec2(100, 100));
-				ImGui::SameLine();		
-				ImGui::Image((ImTextureID)appearance->GetTexture().Get(), ImVec2(100, 100));
+				ImGui::Image((ImTextureID)appearance->GetTextureDiffuse().Get(), ImVec2(100, 100));
+
+				if (appearance->HasTextureNormal())
+				{
+					ImGui::SameLine();
+					ImGui::Image((ImTextureID)appearance->GetTextureNormal().Get(), ImVec2(100, 100));
+				}
 			}
 		}
 

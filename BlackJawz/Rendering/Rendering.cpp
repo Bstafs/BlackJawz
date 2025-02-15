@@ -331,7 +331,6 @@ void BlackJawz::Rendering::Render::ResizeRenderTarget(int width, int height)
 	}
 
 	ResizeDepthStencilBuffer();
-
 	ResizeGBuffer();
 }
 
@@ -367,6 +366,7 @@ void BlackJawz::Rendering::Render::ResizeDepthStencilBuffer()
 		throw std::runtime_error("Failed to create depth-stencil view.");
 	}
 }
+
 
 void BlackJawz::Rendering::Render::ResizeGBuffer()
 {

@@ -537,6 +537,11 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 				light.SpecularPower = specPow;
 			}
 
+			if (lightData->intensity())
+			{
+				auto intens = lightData->intensity();
+				light.Intensity = intens;
+			}
 
 			if (light.Type == BlackJawz::Component::LightType::Point || light.Type == BlackJawz::Component::LightType::Spot) 
 			{
@@ -557,11 +562,6 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 				{
 					auto dir = lightData->direction();
 					light.Direction = { dir->Get(0), dir->Get(1), dir->Get(2) };  
-				}
-				if (lightData->intensity())
-				{
-					auto intens = lightData->intensity();
-					light.Intensity = intens;
 				}
 			}
 

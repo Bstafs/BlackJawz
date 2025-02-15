@@ -16,7 +16,8 @@ table Geometry {
 }
 
 table Texture {
-  dds_data: [ubyte];  // Raw bytes of the DDS file
+  dds_data_diffuse: [ubyte];  
+  dds_data_normal: [ubyte];  
 }
 
 table Appearance {

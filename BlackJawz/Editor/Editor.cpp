@@ -243,9 +243,13 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 				);
 			}
 
-			auto textureData = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureDiffuse().Get());
-			auto textureVec = builder.CreateVector(textureData);
-			auto textureOffset = ECS::CreateTexture(builder, textureVec);
+			auto textureDataDiffuse = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureDiffuse().Get());
+			auto textureVecDiffuse = builder.CreateVector(textureDataDiffuse);
+
+			auto textureDataNormal = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureNormal().Get());
+			auto textureVecNormal = builder.CreateVector(textureDataNormal);
+
+			auto textureOffset = ECS::CreateTexture(builder, textureVecDiffuse, textureVecNormal);
 
 			appearanceOffset = ECS::CreateAppearance(builder, geometryOffset, textureOffset);
 		}
@@ -492,12 +496,15 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			auto textureData = entityData->appearance()->texture();
 
 			// Convert FlatBuffer vector to a standard vector
-			std::vector<uint8_t> textureBufferData(textureData->dds_data()->begin(), textureData->dds_data()->end());
+			std::vector<uint8_t> textureBufferDataDiffuse(textureData->dds_data_diffuse()->begin(), textureData->dds_data_diffuse()->end());
+			std::vector<uint8_t> textureBufferDataNormal(textureData->dds_data_normal()->begin(), textureData->dds_data_normal()->end());
 
-			ComPtr<ID3D11ShaderResourceView> textureSRV = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferData);
+			ComPtr<ID3D11ShaderResourceView> textureSRVDiffuse = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataDiffuse);
+			ComPtr<ID3D11ShaderResourceView> textureSRVNormal = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataNormal);
 
 			// Save geometry data and buffers in appearance
-			BlackJawz::Component::Appearance appearance(geometry, textureSRV.Get());
+			BlackJawz::Component::Appearance appearance(geometry, textureSRVDiffuse.Get(), textureSRVNormal.Get());
+
 			appearanceArray.InsertData(newEntity, appearance);
 
 			signature.set(1); // Assume Appearance is component 1

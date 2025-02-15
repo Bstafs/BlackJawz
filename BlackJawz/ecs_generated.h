@@ -266,15 +266,21 @@ inline ::flatbuffers::Offset<Geometry> CreateGeometryDirect(
 struct Texture FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef TextureBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_DDS_DATA = 4
+    VT_DDS_DATA_DIFFUSE = 4,
+    VT_DDS_DATA_NORMAL = 6
   };
-  const ::flatbuffers::Vector<uint8_t> *dds_data() const {
-    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA);
+  const ::flatbuffers::Vector<uint8_t> *dds_data_diffuse() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_DIFFUSE);
+  }
+  const ::flatbuffers::Vector<uint8_t> *dds_data_normal() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_NORMAL);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_DDS_DATA) &&
-           verifier.VerifyVector(dds_data()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_DIFFUSE) &&
+           verifier.VerifyVector(dds_data_diffuse()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_NORMAL) &&
+           verifier.VerifyVector(dds_data_normal()) &&
            verifier.EndTable();
   }
 };
@@ -283,8 +289,11 @@ struct TextureBuilder {
   typedef Texture Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_dds_data(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data) {
-    fbb_.AddOffset(Texture::VT_DDS_DATA, dds_data);
+  void add_dds_data_diffuse(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_diffuse) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_DIFFUSE, dds_data_diffuse);
+  }
+  void add_dds_data_normal(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_normal) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_NORMAL, dds_data_normal);
   }
   explicit TextureBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -299,19 +308,24 @@ struct TextureBuilder {
 
 inline ::flatbuffers::Offset<Texture> CreateTexture(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_diffuse = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_normal = 0) {
   TextureBuilder builder_(_fbb);
-  builder_.add_dds_data(dds_data);
+  builder_.add_dds_data_normal(dds_data_normal);
+  builder_.add_dds_data_diffuse(dds_data_diffuse);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<Texture> CreateTextureDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<uint8_t> *dds_data = nullptr) {
-  auto dds_data__ = dds_data ? _fbb.CreateVector<uint8_t>(*dds_data) : 0;
+    const std::vector<uint8_t> *dds_data_diffuse = nullptr,
+    const std::vector<uint8_t> *dds_data_normal = nullptr) {
+  auto dds_data_diffuse__ = dds_data_diffuse ? _fbb.CreateVector<uint8_t>(*dds_data_diffuse) : 0;
+  auto dds_data_normal__ = dds_data_normal ? _fbb.CreateVector<uint8_t>(*dds_data_normal) : 0;
   return ECS::CreateTexture(
       _fbb,
-      dds_data__);
+      dds_data_diffuse__,
+      dds_data_normal__);
 }
 
 struct Appearance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

@@ -976,8 +976,8 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 
 			ID3D11ShaderResourceView* texDiffuse;
 			ID3D11ShaderResourceView* texNormal;
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks.dds", nullptr, &texDiffuse);
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_nmap.dds", nullptr, &texNormal);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stones.dds", nullptr, &texDiffuse);
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\stones_nmap.dds", nullptr, &texNormal);
 
 			BlackJawz::Component::Appearance appearance(sphereGeo, texDiffuse, texNormal);
 			appearanceArray.InsertData(newEntity, appearance);

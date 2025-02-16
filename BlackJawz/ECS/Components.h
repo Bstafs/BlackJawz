@@ -56,12 +56,43 @@ namespace BlackJawz::Component
 		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture) : 
 			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture) {}
 
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture, 
+			ID3D11ShaderResourceView* metalTexture) :
+			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture), 
+			textureDataMetal(metalTexture) {
+		}
+
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture,
+			ID3D11ShaderResourceView* metalTexture, ID3D11ShaderResourceView* roughnessTexture) :
+			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture),
+			textureDataMetal(metalTexture), textureDataRoughness(roughnessTexture) {
+		}
+
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture,
+			ID3D11ShaderResourceView* metalTexture, ID3D11ShaderResourceView* roughnessTexture, 
+			ID3D11ShaderResourceView* AoTexture) :
+			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture),
+			textureDataMetal(metalTexture), textureDataRoughness(roughnessTexture), textureDataAO(AoTexture) {
+		}
+
+		Appearance(Geometry geo, ID3D11ShaderResourceView* diffuseTexture, ID3D11ShaderResourceView* normalTexture,
+			ID3D11ShaderResourceView* metalTexture, ID3D11ShaderResourceView* roughnessTexture,
+			ID3D11ShaderResourceView* AoTexture, ID3D11ShaderResourceView* textureDataDisplacement) :
+			objectGeometry(geo), textureDataDiffuse(diffuseTexture), textureDataNormal(normalTexture),
+			textureDataMetal(metalTexture), textureDataRoughness(roughnessTexture), textureDataAO(AoTexture), 
+			textureDataDisplacement(textureDataDisplacement) {
+		}
+
 		// Getter to access the Geometry data
 		Geometry GetGeometry() const { return objectGeometry; }
 		Geometry objectGeometry;  // Store the geometry data
 
 		ComPtr<ID3D11ShaderResourceView> GetTextureDiffuse() const { return textureDataDiffuse; }
 		ComPtr<ID3D11ShaderResourceView> GetTextureNormal() const { return textureDataNormal; }
+		ComPtr<ID3D11ShaderResourceView> GetTextureMetal() const { return textureDataMetal; }
+		ComPtr<ID3D11ShaderResourceView> GetTextureRoughness() const { return textureDataRoughness; }
+		ComPtr<ID3D11ShaderResourceView> GetTextureAO() const { return textureDataAO; }
+		ComPtr<ID3D11ShaderResourceView> GetTextureDisplacement() const { return textureDataDisplacement; }
 
 		bool HasTextureDiffuse()
 		{
@@ -77,10 +108,41 @@ namespace BlackJawz::Component
 				return true;
 			}
 		}
-
+		bool HasTextureMetal()
+		{
+			if (textureDataMetal != nullptr)
+			{
+				return true;
+			}
+		}
+		bool HasTextureRoughness()
+		{
+			if (textureDataRoughness != nullptr)
+			{
+				return true;
+			}
+		}
+		bool HasTextureAO()
+		{
+			if (textureDataAO != nullptr)
+			{
+				return true;
+			}
+		}
+		bool HasTextureDisplacement()
+		{
+			if (textureDataDisplacement != nullptr)
+			{
+				return true;
+			}
+		}
 
 		ComPtr<ID3D11ShaderResourceView> textureDataDiffuse;
 		ComPtr<ID3D11ShaderResourceView> textureDataNormal;
+		ComPtr<ID3D11ShaderResourceView> textureDataMetal;
+		ComPtr<ID3D11ShaderResourceView> textureDataRoughness;
+		ComPtr<ID3D11ShaderResourceView> textureDataAO;
+		ComPtr<ID3D11ShaderResourceView> textureDataDisplacement;
 	};
 
 	enum class LightType : int

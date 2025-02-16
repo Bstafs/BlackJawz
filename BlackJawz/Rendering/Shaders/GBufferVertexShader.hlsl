@@ -5,6 +5,7 @@ cbuffer TransformBuffer : register(b0)
     matrix Projection;
 };
 
+// Input from vertex buffer
 struct VSInput
 {
     float3 Position : POSITION;
@@ -13,14 +14,15 @@ struct VSInput
     float3 Tangent : TANGENT;
 };
 
+// Output to G-Buffer pixel shader
 struct VSOutput
 {
-    float4 Position : SV_POSITION; // Clip-space position
-    float3 WorldPos : POSITION; 
-    float3 Normal : NORMAL;
-    float2 TexC : TEXCOORD0;
-    float3 Tangent : TANGENT;
-    float3x3 TBN_MATRIX : TBN_MATRIX;
+    float4 ClipPos : SV_POSITION; // Clip-space position
+    float3 WorldPos : POSITION; // World-space position
+    float3 Normal : NORMAL; // World-space normal
+    float2 TexC : TEXCOORD0; // UV coordinates
+    float3 Tangent : TANGENT; // World-space tangent
+    float3x3 TBN : TBN_MATRIX; // Tangent-to-world matrix
 };
 
 VSOutput VS(VSInput input)
@@ -28,27 +30,26 @@ VSOutput VS(VSInput input)
     VSOutput output;
 
     // Transform to world space
-    output.Position = mul(float4(input.Position, 1.0f), World);
-    output.WorldPos = output.Position.xyz;
+    float4 worldPos = mul(float4(input.Position, 1.0f), World);
+    output.WorldPos = worldPos.xyz;
 
     // Transform to clip space
-    output.Position = mul(output.Position, View);
-    output.Position = mul(output.Position, Projection);
+    output.ClipPos = mul(worldPos, View);
+    output.ClipPos = mul(output.ClipPos, Projection);
 
-    // Transform normal to world space (assumes no non-uniform scaling)
-    float3 normalW = mul(float4(input.Normal, 0.0f), World).xyz;
-    
-    output.Normal = normalize(normalW);
-    output.Tangent = mul(input.Tangent, (float3x3) World);
-    
-    float3 N = output.Normal;
-    float3 T = normalize(output.Tangent - dot(output.Tangent, N) * N);
-    float3 B = cross(N, T);
-    
-    float3x3 TBN_MATRIX = float3x3(T, B, N);
+    // Compute normal in world space using inverse transpose (for correct scaling)
+    float3 normalW = normalize(mul((float3x3) World, input.Normal));
+    output.Normal = normalW;
 
-    output.TBN_MATRIX = TBN_MATRIX;
-    
+    // Transform tangent using the same method (assuming uniform scaling)
+    float3 tangentW = normalize(mul((float3x3) World, input.Tangent));
+    output.Tangent = tangentW;
+
+    // Compute bitangent and TBN matrix
+    float3 bitangent = cross(normalW, tangentW);
+    output.TBN = float3x3(tangentW, bitangent, normalW);
+
+    // Pass UV coordinates
     output.TexC = input.TexC;
 
     return output;

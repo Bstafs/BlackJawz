@@ -378,10 +378,10 @@ void BlackJawz::Rendering::Render::ResizeGBuffer()
 	}
 
 	DXGI_FORMAT formats[] = {
-		DXGI_FORMAT_R8G8B8A8_UNORM,      // Albedo
-		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Normal
-		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Position
-		DXGI_FORMAT_R8G8B8A8_UNORM       // Specular 
+		DXGI_FORMAT_R8G8B8A8_UNORM,      // Albedo (RGB) + AO (A)
+		DXGI_FORMAT_R10G10B10A2_UNORM,   // Normal (XYZ) + Padding
+		DXGI_FORMAT_R8G8B8A8_UNORM,       // Metalness (R), Roughness (G), AO (B) + Padding
+		DXGI_FORMAT_R16G16B16A16_FLOAT    // Position
 	};
 
 	HRESULT hr = S_OK;
@@ -1101,10 +1101,10 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 	// Define formats for each G-Buffer texture.
 	// For the depth texture, use a typeless format so it can be bound as both a depth-stencil and a shader resource.
 	DXGI_FORMAT formats[] = {
-		DXGI_FORMAT_R8G8B8A8_UNORM,      // Albedo
-		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Normal
-		DXGI_FORMAT_R16G16B16A16_FLOAT,  // Position
-		DXGI_FORMAT_R8G8B8A8_UNORM        // Specular 
+		DXGI_FORMAT_R8G8B8A8_UNORM,      // Albedo (RGB) + AO (A)
+		DXGI_FORMAT_R10G10B10A2_UNORM,   // Normal (XYZ) + Padding
+		DXGI_FORMAT_R8G8B8A8_UNORM,       // Metalness (R), Roughness (G), AO (B) + Padding
+		DXGI_FORMAT_R16G16B16A16_FLOAT // Position
 	};
 
 	for (int i = 0; i < 4; i++) // First four textures: Albedo, Normal, Position, Specular
@@ -1146,22 +1146,6 @@ HRESULT BlackJawz::Rendering::Render::InitGBuffer()
 		if (FAILED(hr))
 			return hr;
 	}
-
-	//Blend state setup
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory(&blendDesc, sizeof(blendDesc));
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.IndependentBlendEnable = false;
-	blendDesc.RenderTarget[0].BlendEnable = true;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	pID3D11Device.Get()->CreateBlendState(&blendDesc, &blendState);
 
 	return hr;
 }
@@ -1380,19 +1364,19 @@ void BlackJawz::Rendering::Render::BeginGBufferPass()
 	float clearColor[4] = { 0, 0, 0, 0 };
 	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[0].Get(), clearColor); // Albedo
 	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[1].Get(), clearColor); // Normal
-	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[2].Get(), clearColor); // Position
-	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[3].Get(), clearColor); // Specular
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[2].Get(), clearColor); // Metal, Roughness, AO
+	pImmediateContext.Get()->ClearRenderTargetView(gBufferRTVs[3].Get(), clearColor); // Position
 }
 
 void BlackJawz::Rendering::Render::EndGBufferPass()
 {
 	// Unbind the G-buffer render targets
-	ID3D11RenderTargetView* nullRTV[4] = { nullptr, nullptr, nullptr,nullptr };
+	ID3D11RenderTargetView* nullRTV[4] = { nullptr, nullptr, nullptr, nullptr };
 	pImmediateContext.Get()->OMSetRenderTargets(4, nullRTV, nullptr);
 
 	// Unbind shader resource views
-	ID3D11ShaderResourceView* nullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
-	pImmediateContext.Get()->PSSetShaderResources(0, 4, nullSRVs);
+	ID3D11ShaderResourceView* nullSRVs[6] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+	pImmediateContext.Get()->PSSetShaderResources(0, 6, nullSRVs);
 }
 
 //void BlackJawz::Rendering::Render::Draw(BlackJawz::System::TransformSystem& transformSystem,
@@ -1545,6 +1529,10 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 	cb.View = XMMatrixTranspose(view);
 	cb.Projection = XMMatrixTranspose(projection);
 
+
+	LightsBuffer cb2 = {};
+	cb2.CameraPosition = cameraPosition;
+
 	// Bind Geometry Shaders (Deferred GBuffer Pass)
 	pImmediateContext.Get()->IASetInputLayout(pGBufferInputLayout.Get());
 	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1553,6 +1541,8 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 	pImmediateContext.Get()->VSSetConstantBuffers(0, 1, pTransformBuffer.GetAddressOf());
 
 	pImmediateContext.Get()->PSSetShader(pGBufferPixelShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pLightsBuffer.GetAddressOf());
+
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 
 	// Iterate over entities in the Appearance System (Geometry Pass)
@@ -1562,6 +1552,10 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 		BlackJawz::Component::Geometry geo = appearance.GetGeometry();
 		ComPtr<ID3D11ShaderResourceView> entityTextureDiffuse = appearance.GetTextureDiffuse();
 		ComPtr<ID3D11ShaderResourceView> entityTextureNormal = appearance.GetTextureNormal();
+		ComPtr<ID3D11ShaderResourceView> entityTextureMetal = appearance.GetTextureMetal();
+		ComPtr<ID3D11ShaderResourceView> entityTextureRoughness = appearance.GetTextureRoughness();
+		ComPtr<ID3D11ShaderResourceView> entityTextureAO = appearance.GetTextureAO();
+		ComPtr<ID3D11ShaderResourceView> entityTextureDisplacement = appearance.GetTextureDisplacement();
 
 		// --- Update Transform for this entity ---
 		if (transformSystem.HasComponent(entity))
@@ -1582,6 +1576,18 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 		
 		if (appearance.HasTextureNormal())
 		pImmediateContext.Get()->PSSetShaderResources(1, 1, entityTextureNormal.GetAddressOf());
+
+		if (appearance.HasTextureMetal())
+			pImmediateContext.Get()->PSSetShaderResources(2, 1, entityTextureMetal.GetAddressOf());
+
+		if (appearance.HasTextureRoughness())
+			pImmediateContext.Get()->PSSetShaderResources(3, 1, entityTextureRoughness.GetAddressOf());
+
+		if (appearance.HasTextureAO())
+			pImmediateContext.Get()->PSSetShaderResources(4, 1, entityTextureAO.GetAddressOf());
+
+		if (appearance.HasTextureDisplacement())
+			pImmediateContext.Get()->PSSetShaderResources(5, 1, entityTextureDisplacement.GetAddressOf());
 
 		// Draw the entity (G-Buffer pass)
 		pImmediateContext.Get()->DrawIndexed(geo.IndicesCount, 0, 0);
@@ -1711,7 +1717,7 @@ void BlackJawz::Rendering::Render::EndFrame()
 
 	// Set Shader Resource to Null / Clear
 	ID3D11ShaderResourceView* const shaderClear[1] = { nullptr };
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		pImmediateContext.Get()->PSSetShaderResources(i, 1, shaderClear);
 	}

@@ -59,7 +59,7 @@ struct GBufferOutput
 };
 
 static const float minLayers = 8.0f;
-static const float maxLayers = 128.0f;
+static const float maxLayers = 64.0f;
 static const float heightScale = 0.02f; 
 
 float2 ParallaxOcclusionMapping(float2 texCoords, float3 viewDirTangent)
@@ -93,11 +93,12 @@ float2 ParallaxOcclusionMapping(float2 texCoords, float3 viewDirTangent)
             break;
     }
     
-    // Binary search refinement: refine between prevTexCoords and currentTexCoords
     const int numRefinementSteps = 5;
     float2 refinedTexCoords = currentTexCoords;
     float refinedLayerDepth = currentLayerDepth;
-    for (int i = 0; i < numRefinementSteps; i++)
+    
+    [unroll(5)]
+    for (int j = 0; j < numRefinementSteps; j++)
     {
         float2 midTexCoords = (refinedTexCoords + prevTexCoords) * 0.5;
         float midHeight = DisplacementTexture.Sample(samLinear, midTexCoords).r;
@@ -121,31 +122,25 @@ GBufferOutput PS(PSInput input)
 {
     GBufferOutput output;
 
-    // Convert view vector to tangent space
-    // Assume CameraPosition is provided via a cbuffer
     float3 V = normalize(CameraPosition - input.WorldPos);
     float3 viewDirTangent = normalize(mul(V, input.TBN_MATRIX));
 
-    // Adjust texture coordinates using POM
-    float2 newTexCoords = ParallaxOcclusionMapping(input.TexC, viewDirTangent);
+   // float2 newTexCoords = ParallaxOcclusionMapping(input.TexC, viewDirTangent);
+    float2 newTexCoords = input.TexC;
     
-    // Sample Albedo and store AO in alpha channel
     float3 albedo = DiffuseTexture.Sample(samLinear, newTexCoords).rgb;
     float ao = AOTexture.Sample(samLinear, newTexCoords).r;
     output.Albedo = float4(albedo, ao);
     
-    // Sample and transform Normal (recompute if desired, or use displaced normals if provided)
     float3 sampledNormal = NormalTexture.Sample(samLinear, newTexCoords).xyz * 2.0f - 1.0f;
     float3 worldNormal = normalize(mul(sampledNormal, input.TBN_MATRIX));
     output.Normal = float4(worldNormal, 1.0f);
     
-    // Sample material properties from their respective textures (or pack them together)
     float metallic = MetalTexture.Sample(samLinear, newTexCoords).r;
     float roughness = RoughnessTexture.Sample(samLinear, newTexCoords).r;
-    // Optionally, you can sample AO here as well if not stored in albedo.alpha
+
     output.MetalRoughAO = float3(metallic, roughness, ao);
     
-    // Store world-space position (unchanged)
     output.Position = float4(input.WorldPos, 1.0f);
     
     return output;

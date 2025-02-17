@@ -951,13 +951,14 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			ComPtr<ID3D11ShaderResourceView> texAO = nullptr;
 			ComPtr<ID3D11ShaderResourceView> texDisplacement = nullptr;
 
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\pavement_diffuse.dds", nullptr, texDiffuse.GetAddressOf());
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\pavement_normals.dds", nullptr, texNormal.GetAddressOf());
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\pavement_roughness.dds", nullptr, texRough.GetAddressOf());
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\pavement_AO.dds", nullptr, texAO.GetAddressOf());
-			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\pavement_displacement.dds", nullptr, texDisplacement.GetAddressOf());
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_diffuse.dds", nullptr, texDiffuse.GetAddressOf());
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_normals.dds", nullptr, texNormal.GetAddressOf());
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_roughness.dds", nullptr, texRough.GetAddressOf());
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_AO.dds", nullptr, texAO.GetAddressOf());
+			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\bricks_displacement.dds", nullptr, texDisplacement.GetAddressOf());
+
 			BlackJawz::Component::Appearance appearance(cubeGeo, texDiffuse.Get(), texNormal.Get(), texMetal.Get(), 
-				texRough.Get(), texAO.Get());
+				texRough.Get(), texAO.Get(), texDisplacement.Get());
 			appearanceArray.InsertData(newEntity, appearance);
 
 

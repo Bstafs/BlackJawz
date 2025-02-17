@@ -5,7 +5,6 @@ Texture2D gNormal : register(t1); // RT1: World-space normal
 Texture2D gMetalRoughAO : register(t2); // RT2: R = Metalness, G = Roughness, B = AO
 Texture2D gPosition : register(t3); // RT3: World-space position
 
-
 #define MAX_LIGHTS 10
 
 static const float PI = 3.14159265;
@@ -47,7 +46,7 @@ static const int LIGHT_TYPE_SPOT = 2;
 
 struct VSInput
 {
-    float3 position : POSITION; 
+    float3 position : POSITION;
     float2 texcoord : TEXCOORD0;
 };
 
@@ -61,8 +60,35 @@ PSInput VS(VSInput input)
 {
     PSInput output;
     output.Position = float4(input.position.xy, 0.0, 1.0);
-    output.TexC = input.texcoord; 
+    output.TexC = input.texcoord;
     return output;
+}
+
+// Normal Distribution function 
+float D_GGX(float dotNH, float roughness)
+{
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+    float denom = dotNH * dotNH * (alpha2 - 1.0) + 1.0;
+    return (alpha2) / (PI * denom * denom);
+}
+
+// Geometric Shadowing function 
+float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float GL = dotNL / (dotNL * (1.0 - k) + k);
+    float GV = dotNV / (dotNV * (1.0 - k) + k);
+    return GL * GV;
+}
+
+// Fresnel function 
+float3 F_Schlick(float cosTheta, float3 albedo, float metallic)
+{
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic); // * material.specular
+    float3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    return F;
 }
 
 float4 PS(PSInput input) : SV_TARGET
@@ -70,10 +96,7 @@ float4 PS(PSInput input) : SV_TARGET
     // --- Sample the G-buffer ---
     // Albedo (from RT0)
     float3 albedo = gAlbedo.Sample(samLinear, input.TexC).rgb;
-    
-    // Use AO from the MetalRoughAO buffer (RT2) or from gAlbedo.a if you prefer.
-    float ao = gMetalRoughAO.Sample(samLinear, input.TexC).b;
-    
+        
     // World-space normal (RT1)
     float3 N = normalize(gNormal.Sample(samLinear, input.TexC).rgb);
     
@@ -84,6 +107,7 @@ float4 PS(PSInput input) : SV_TARGET
     float3 metalRoughAO = gMetalRoughAO.Sample(samLinear, input.TexC).rgb;
     float metallic = metalRoughAO.r;
     float roughness = saturate(metalRoughAO.g);
+    float ao = metalRoughAO.b;
     
     // --- PBR Base Reflectivity ---
     // For dielectrics, F0 is typically around 0.04.
@@ -95,12 +119,12 @@ float4 PS(PSInput input) : SV_TARGET
     
     // Accumulated outgoing radiance
     float3 Lo = float3(0, 0, 0);
-    
+     
     // --- Lighting Loop ---
     for (int i = 0; i < numLights; ++i)
     {
         LightProperties light = lights[i];
-        float3 L = 0;
+        float3 L = float3(0,0,0);
         float attenuation = 1.0;
         float3 fragToLight = 0;
         float dist = 0.0;
@@ -113,8 +137,8 @@ float4 PS(PSInput input) : SV_TARGET
             if (dist > light.Range)
                 continue;
             L = fragToLight / dist;
-            float rangeFactor = exp(-pow(dist / light.Range, 4));
-            attenuation = rangeFactor / (1.0 + light.Attenuation.x * dist + light.Attenuation.y * (dist * dist));
+            float rangeFactor = saturate(1.0 - (dist / light.Range));
+            attenuation = rangeFactor / max(1.0 + light.Attenuation.x * dist + light.Attenuation.y * (dist * dist), 0.001);
         }
         else if (light.LightType == LIGHT_TYPE_DIRECTIONAL)
         {
@@ -132,7 +156,7 @@ float4 PS(PSInput input) : SV_TARGET
             float epsilon = light.SpotInnerCone - light.SpotOuterCone;
             float spotFactor = clamp((theta - light.SpotOuterCone) / epsilon, 0.0, 1.0);
             float rangeFactor = saturate(1.0 - (dist / light.Range));
-            attenuation = rangeFactor * spotFactor / (light.Attenuation.x + light.Attenuation.y * dist + light.Attenuation.z * (dist * dist));
+            attenuation = rangeFactor / max(1.0 + light.Attenuation.x * dist + light.Attenuation.y * (dist * dist), 0.001);
         }
         
         // Half vector
@@ -145,23 +169,18 @@ float4 PS(PSInput input) : SV_TARGET
         float VdotH = max(dot(V, H), 0.0);
         
         // --- Microfacet BRDF (Specular) ---
+
         // GGX Normal Distribution Function
-        float alpha = roughness * roughness;
-        float alpha2 = alpha * alpha;
-        float denom = (NdotH * NdotH * (alpha2 - 1.0) + 1.0);
-        float D = alpha2 / (PI * denom * denom);
+        float D = D_GGX(NdotH, roughness);
         
         // Geometry function (Schlick-GGX approximation)
-        float k = (alpha + 1.0) * (alpha + 1.0) / 8.0;
-        float G_V = NdotV / (NdotV * (1.0 - k) + k);
-        float G_L = NdotL / (NdotL * (1.0 - k) + k);
-        float G = G_V * G_L;
+        float G = G_SchlicksmithGGX(NdotL, NdotV, roughness);
         
         // Fresnel using Schlick's approximation
-        float3 F = F0 + (1.0 - F0) * pow(1.0 - VdotH, 5.0);
+        float3 F = F_Schlick(VdotH, albedo, metallic);
         
         // Final specular term
-        float3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.001);
+        float3 specular = D * F * G / max(4.0 * NdotL * NdotV, 0.001);
         
         // --- Diffuse term ---
         // Metals have little to no diffuse reflection.
@@ -173,13 +192,14 @@ float4 PS(PSInput input) : SV_TARGET
         
         // Accumulate contribution (scaled by the cosine term)
         Lo += (diffuse + specular) * radiance * NdotL;
+                
     }
     
     // --- Ambient Term ---
-    // A simple ambient contribution; in production you might use IBL here.
-    float3 ambient = float3(0.03, 0.03, 0.03) * albedo * ao;
+    // A simple ambient contribution;  IBL here.
+    float3 ambient = albedo * ao;
     
-    float3 color = ambient + Lo;
+    float3 color = ambient + Lo;   
     
     // Optionally: tone mapping and gamma correction can be applied here.
     return float4(color, 1.0);

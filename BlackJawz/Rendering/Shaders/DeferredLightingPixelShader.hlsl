@@ -191,8 +191,7 @@ float4 PS(PSInput input) : SV_TARGET
         float3 radiance = light.DiffuseLight.rgb * attenuation * light.Intensity;
         
         // Accumulate contribution (scaled by the cosine term)
-        Lo += (diffuse + specular) * radiance * NdotL;
-                
+        Lo += (diffuse + specular) * radiance * NdotL;               
     }
     
     // --- Ambient Term ---

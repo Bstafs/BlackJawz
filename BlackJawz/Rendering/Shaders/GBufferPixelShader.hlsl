@@ -120,11 +120,11 @@ float2 ParallaxOcclusionMapping(float2 texCoords, float3 viewDirTangent)
 
 float ParallaxSelfShadow(float2 texCoords, float3 lightDirTangent)
 {
-    const int numShadowSamples = 32; // Adjust for performance/quality
-    float shadow = 1.0; // Start fully lit
+    const int numShadowSamples = 128;
+    float shadow = 1.0; 
+    float totalOcclusion = 0.0; 
 
     float height = DisplacementTexture.Sample(samLinear, texCoords).r;
-
     float2 deltaTexCoords = lightDirTangent.xy * heightScale / lightDirTangent.z / numShadowSamples;
     float stepHeight = height / numShadowSamples;
 
@@ -138,14 +138,15 @@ float ParallaxSelfShadow(float2 texCoords, float3 lightDirTangent)
         currentDepth += stepHeight;
 
         float sampleHeight = DisplacementTexture.Sample(samLinear, sampleCoords).r;
-        
+
         if (sampleHeight > currentDepth) // Occlusion detected
         {
-            shadow *= 0.85; // Reduce light intensity
+            totalOcclusion += 1.0; 
         }
     }
 
-    return shadow;
+    shadow = saturate(1.0 - (totalOcclusion / numShadowSamples)); 
+    return shadow * 0.5 + 0.5; // Keep minimum light (prevents total blackness)
 }
 
 GBufferOutput PS(PSInput input)
@@ -155,17 +156,24 @@ GBufferOutput PS(PSInput input)
     float3 V = normalize(CameraPosition - input.WorldPos);
     float3 viewDirTangent = normalize(mul(V, input.TBN_MATRIX));
 
-   // float3 L = normalize(lights[0].LightPosition.xyz - input.WorldPos);
-   // float3 lightDirTangent = normalize(mul(L, input.TBN_MATRIX));
+    float2 newTexCoords = ParallaxOcclusionMapping(input.TexC, viewDirTangent);
     
-   float2 newTexCoords = ParallaxOcclusionMapping(input.TexC, viewDirTangent);
-   // float2 newTexCoords = input.TexC;
+    float totalShadowFactor = 0.0f;
     
-   // float shadowFactor = ParallaxSelfShadow(newTexCoords, lightDirTangent);
+    for (int i = 0; i < numLights; ++i)
+    {
+        float3 L = normalize(lights[i].LightPosition.xyz - input.WorldPos);
+        float3 lightDirTangent = normalize(mul(L, input.TBN_MATRIX));
+        
+        totalShadowFactor += ParallaxSelfShadow(newTexCoords, lightDirTangent);
+    }
+        
+    float shadowFactor = totalShadowFactor / numLights;
+    shadowFactor = lerp(0.2f, 1.0f, shadowFactor);
     
     float3 albedo = DiffuseTexture.Sample(samLinear, newTexCoords).rgb;
     float ao = AOTexture.Sample(samLinear, newTexCoords).r;
-    output.Albedo = float4(albedo, ao);
+    output.Albedo = float4(albedo * shadowFactor, ao);
     
     float3 sampledNormal = NormalTexture.Sample(samLinear, newTexCoords).xyz * 2.0f - 1.0f;
     float3 worldNormal = normalize(mul(sampledNormal, input.TBN_MATRIX));

@@ -1,9 +1,14 @@
 SamplerState samLinear : register(s0);
+SamplerState samCube : register(s1);
 
 Texture2D gAlbedo : register(t0); // RT0: RGB = Albedo, A = AO (optional)
 Texture2D gNormal : register(t1); // RT1: World-space normal
 Texture2D gMetalRoughAO : register(t2); // RT2: R = Metalness, G = Roughness, B = AO
 Texture2D gPosition : register(t3); // RT3: World-space position
+
+TextureCube SkyBox : register(t4);
+TextureCube IrradianceMap : register(t5);
+TextureCube preFilteredEnvMap : register(t6);
 
 #define MAX_LIGHTS 10
 
@@ -110,8 +115,6 @@ float4 PS(PSInput input) : SV_TARGET
     float ao = metalRoughAO.b;
     
     // --- PBR Base Reflectivity ---
-    // For dielectrics, F0 is typically around 0.04.
-    // For metals, F0 comes from the albedo.
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
     
     // Camera (view) vector
@@ -183,11 +186,10 @@ float4 PS(PSInput input) : SV_TARGET
         float3 specular = D * F * G / max(4.0 * NdotL * NdotV, 0.001);
         
         // --- Diffuse term ---
-        // Metals have little to no diffuse reflection.
         float3 kD = (1.0 - F) * (1.0 - metallic);
         float3 diffuse = kD * albedo / PI;
         
-        // Light radiance (includes light color and intensity)
+        // Light radiance 
         float3 radiance = light.DiffuseLight.rgb * attenuation * light.Intensity;
         
         // Accumulate contribution (scaled by the cosine term)
@@ -195,11 +197,10 @@ float4 PS(PSInput input) : SV_TARGET
     }
     
     // --- Ambient Term ---
-    // A simple ambient contribution;  IBL here.
+    // A simple ambient contribution
     float3 ambient = albedo * ao;
     
     float3 color = ambient + Lo;   
     
-    // Optionally: tone mapping and gamma correction can be applied here.
     return float4(color, 1.0);
 }

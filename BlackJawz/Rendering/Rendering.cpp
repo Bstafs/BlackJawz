@@ -662,16 +662,28 @@ HRESULT BlackJawz::Rendering::Render::InitSamplerState()
 {
 	HRESULT hr = S_OK;
 
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	hr = pID3D11Device.Get()->CreateSamplerState(&sampDesc, pSamplerLinear.GetAddressOf());
+	D3D11_SAMPLER_DESC sampDescLinear;
+	ZeroMemory(&sampDescLinear, sizeof(sampDescLinear));
+	sampDescLinear.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDescLinear.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDescLinear.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDescLinear.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDescLinear.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDescLinear.MinLOD = 0;
+	sampDescLinear.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = pID3D11Device.Get()->CreateSamplerState(&sampDescLinear, pSamplerLinear.GetAddressOf());
+
+
+	D3D11_SAMPLER_DESC sampDescCube;
+	ZeroMemory(&sampDescCube, sizeof(sampDescCube));
+	sampDescCube.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDescCube.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDescCube.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDescCube.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDescCube.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDescCube.MinLOD = 0;
+	sampDescCube.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = pID3D11Device.Get()->CreateSamplerState(&sampDescCube, pSamplerCube.GetAddressOf());
 
 	return hr;
 }
@@ -697,6 +709,17 @@ HRESULT BlackJawz::Rendering::Render::InitDepthStencil()
 
 	pID3D11Device.Get()->CreateTexture2D(&depthStencilDesc, nullptr, pDepthStencilBuffer.GetAddressOf());
 	pID3D11Device.Get()->CreateDepthStencilView(pDepthStencilBuffer.Get(), nullptr, pDepthStencilView.GetAddressOf());
+
+	return hr;
+}
+
+HRESULT BlackJawz::Rendering::Render::InitShaderMapping()
+{
+	HRESULT hr = S_OK;
+
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\SkyBox.dds", nullptr, texSkyBox.GetAddressOf());
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\RadianceMap.dds", nullptr, texRadianceMap.GetAddressOf());
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\IrradianceMap.dds", nullptr, texIrradianceMap.GetAddressOf());
 
 	return hr;
 }
@@ -769,6 +792,21 @@ HRESULT BlackJawz::Rendering::Render::InitConstantBuffer()
 	bufferDescLights.StructureByteStride = 0;
 
 	hr = pID3D11Device.Get()->CreateBuffer(&bufferDescLights, nullptr, pLightsBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugStringA("Failed to create constant buffer.\n");
+		return hr;
+	}
+
+	D3D11_BUFFER_DESC bufferDescPP = {};
+	bufferDescPP.Usage = D3D11_USAGE_DEFAULT;
+	bufferDescPP.ByteWidth = sizeof(PostProcessingBuffer);
+	bufferDescPP.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bufferDescPP.CPUAccessFlags = 0;
+	bufferDescPP.MiscFlags = 0;
+	bufferDescPP.StructureByteStride = 0;
+
+	hr = pID3D11Device.Get()->CreateBuffer(&bufferDescPP, nullptr, pPostProcessingBuffer.GetAddressOf());
 	if (FAILED(hr))
 	{
 		OutputDebugStringA("Failed to create constant buffer.\n");
@@ -1235,6 +1273,11 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
+	if (FAILED(InitShaderMapping()))
+	{
+		return E_FAIL;
+	}
+
 	if (FAILED(InitDepthStencil()))
 	{
 		return E_FAIL;
@@ -1665,16 +1708,21 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	pImmediateContext.Get()->PSSetShader(pDeferredLightingPixelShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pLightsBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
+	pImmediateContext.Get()->PSSetSamplers(1, 1, pSamplerCube.GetAddressOf());
 
 	ID3D11ShaderResourceView* srvs[4] =
 	{
 		gBufferSRVs[0].Get(),
 		gBufferSRVs[1].Get(),
 		gBufferSRVs[2].Get(),
-		gBufferSRVs[3].Get()
+		gBufferSRVs[3].Get(),
 	};
 
 	pImmediateContext->PSSetShaderResources(0, 4, srvs);
+
+	pImmediateContext->PSSetShaderResources(4, 1, texSkyBox.GetAddressOf());
+	pImmediateContext->PSSetShaderResources(5, 1, texIrradianceMap.GetAddressOf());
+	pImmediateContext->PSSetShaderResources(6, 1, texRadianceMap.GetAddressOf());
 
 	// Draw Fullscreen Quad
 	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
@@ -1693,9 +1741,15 @@ void BlackJawz::Rendering::Render::QuadPass()
 	pImmediateContext.Get()->IASetIndexBuffer(pDeferredQuadIB.Get(), DXGI_FORMAT_R16_UINT, 0);
 	pImmediateContext.Get()->IASetInputLayout(pPostProcessingInputLayout.Get());
 
+	PostProcessingBuffer cb = {};
+	cb.ScreenSize = XMFLOAT2(renderWidth, renderHeight);
+	pImmediateContext.Get()->UpdateSubresource(pPostProcessingBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
 	// Set Quad Shaders
 	pImmediateContext.Get()->VSSetShader(pPostProcessingVertexShader.Get(), nullptr, 0);
+
 	pImmediateContext.Get()->PSSetShader(pPostProcessingPixelShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pPostProcessingBuffer.GetAddressOf());
 
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
 

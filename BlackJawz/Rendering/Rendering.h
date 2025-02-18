@@ -63,6 +63,12 @@ struct LightsBuffer
 	XMFLOAT3 CameraPosition;
 };
 
+struct PostProcessingBuffer
+{
+	XMFLOAT2 ScreenSize;
+	XMFLOAT2 Padding01;
+};
+
 namespace BlackJawz::Rendering
 {
 	class Render
@@ -114,6 +120,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitDeferredLightingShaders();
 		HRESULT InitPostProcessingShaders();
 		HRESULT InitSamplerState();
+		HRESULT InitShaderMapping();
 		HRESULT InitDepthStencil();
 		HRESULT InitRasterizer();
 		HRESULT InitImGui();
@@ -149,6 +156,7 @@ namespace BlackJawz::Rendering
 		float ClearColor[4] = {};
 
 		ComPtr<ID3D11SamplerState> pSamplerLinear;
+		ComPtr<ID3D11SamplerState> pSamplerCube;
 
 		// Render Target
 		ComPtr<ID3D11RenderTargetView> pRenderTargetView;
@@ -189,6 +197,7 @@ namespace BlackJawz::Rendering
 		// Constant Buffer
 		ComPtr<ID3D11Buffer> pTransformBuffer;
 		ComPtr<ID3D11Buffer> pLightsBuffer;
+		ComPtr<ID3D11Buffer> pPostProcessingBuffer;
 
 		// Camera
 		XMFLOAT4X4 viewMatrix = XMFLOAT4X4();
@@ -226,6 +235,11 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11Texture2D> pQuadRenderTargetTexture;
 		ComPtr<ID3D11RenderTargetView> pQuadRenderTargetView;
 		ComPtr<ID3D11ShaderResourceView> pQuadRenderShaderResourceView;
+
+		// SkyBox, Radiance Map, Irradiance Map
+		ComPtr<ID3D11ShaderResourceView> texSkyBox;
+		ComPtr<ID3D11ShaderResourceView> texRadianceMap;
+		ComPtr<ID3D11ShaderResourceView> texIrradianceMap;
 
 		ID3D11BlendState* blendState = nullptr;
 	};

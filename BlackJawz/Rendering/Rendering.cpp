@@ -92,6 +92,11 @@ HRESULT BlackJawz::Rendering::Render::InitRenderTargetViews()
 		return E_FAIL;
 	}
 
+	if (FAILED(InitBRDFLUTView()))
+	{
+		return E_FAIL;
+	}
+
 	if (FAILED(InitLightingView()))
 	{
 		return E_FAIL;
@@ -152,6 +157,37 @@ HRESULT BlackJawz::Rendering::Render::InitBackBuffer()
 	if (FAILED(hr)) {
 		return hr;
 	}
+
+	return hr;
+}
+
+HRESULT BlackJawz::Rendering::Render::InitBRDFLUTView()
+{
+	HRESULT hr = S_OK;
+
+	D3D11_TEXTURE2D_DESC texDesc = {};
+	texDesc.Width = 512;
+	texDesc.Height = 512;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = 0;
+
+	pID3D11Device.Get()->CreateTexture2D(&texDesc, nullptr, pBRDFLUTTexture.GetAddressOf());
+
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = texDesc.Format;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D.MipSlice = 0;
+
+	pID3D11Device.Get()->CreateRenderTargetView(pBRDFLUTTexture.Get(), &rtvDesc, pBRDFLUTRenderTargetView.GetAddressOf());
+
+	pID3D11Device.Get()->CreateShaderResourceView(pBRDFLUTTexture.Get(), nullptr, pBRDFLUTShaderResourceView.GetAddressOf());
 
 	return hr;
 }
@@ -546,6 +582,118 @@ HRESULT BlackJawz::Rendering::Render::InitGBufferShadersAndInputLayout()
 	return hr;
 }
 
+HRESULT BlackJawz::Rendering::Render::InitBRDFLUTShadersAndInputLayout()
+{
+	HRESULT hr = S_OK;
+
+	// Compile the vertex shader
+	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/BRDFLUT.hlsl", "VS", "vs_5_0", &vsBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile vertex shader.\n");
+		return hr;
+	}
+
+	// Compile the pixel shader
+	Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/BRDFLUT.hlsl", "PS", "ps_5_0", &psBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile pixel shader.\n");
+		return hr;
+	}
+
+	// Create the vertex shader
+	hr = pID3D11Device.Get()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, pBRDFLUTVertexShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create vertex shader.\n");
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = pID3D11Device.Get()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, pBRDFLUTPixelShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create pixel shader.\n");
+		return hr;
+	}
+
+	// Define the input layout
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the input layout
+	hr = pID3D11Device.Get()->CreateInputLayout(layoutDesc, ARRAYSIZE(layoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), pBRDFLUTInputLayout.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create input layout.\n");
+		return hr;
+	}
+
+	return hr;
+}
+
+HRESULT BlackJawz::Rendering::Render::InitIrradianceShadersAndInputLayout()
+{
+	HRESULT hr = S_OK;
+
+	// Compile the vertex shader
+	Microsoft::WRL::ComPtr<ID3DBlob> vsBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/Irradiance.hlsl", "VS", "vs_5_0", &vsBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile vertex shader.\n");
+		return hr;
+	}
+
+	// Compile the pixel shader
+	Microsoft::WRL::ComPtr<ID3DBlob> psBlob;
+	hr = CompileShaderFromFile(L"../BlackJawz/Rendering/Shaders/Irradiance.hlsl", "PS", "ps_5_0", &psBlob);
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to compile pixel shader.\n");
+		return hr;
+	}
+
+	// Create the vertex shader
+	hr = pID3D11Device.Get()->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, pIrradianceVertexShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create vertex shader.\n");
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = pID3D11Device.Get()->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, pIrradiancePixelShader.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create pixel shader.\n");
+		return hr;
+	}
+
+	// Define the input layout
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the input layout
+	hr = pID3D11Device.Get()->CreateInputLayout(layoutDesc, ARRAYSIZE(layoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), pIrradianceInputLayout.GetAddressOf());
+	if (FAILED(hr))
+	{
+		OutputDebugString(L"Failed to create input layout.\n");
+		return hr;
+	}
+
+	return hr;
+}
+
 HRESULT BlackJawz::Rendering::Render::InitDeferredLightingShaders()
 {
 	HRESULT hr = S_OK;
@@ -720,6 +868,7 @@ HRESULT BlackJawz::Rendering::Render::InitShaderMapping()
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\SkyBox.dds", nullptr, texSkyBox.GetAddressOf());
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\RadianceMap.dds", nullptr, texRadianceMap.GetAddressOf());
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\IrradianceMap.dds", nullptr, texIrradianceMap.GetAddressOf());
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\BRDF_LUT.dds", nullptr, texBRDFLUTMap.GetAddressOf());
 
 	return hr;
 }
@@ -1258,6 +1407,16 @@ HRESULT BlackJawz::Rendering::Render::Initialise()
 		return E_FAIL;
 	}
 
+	if (FAILED(InitBRDFLUTShadersAndInputLayout()))
+	{
+		return E_FAIL;
+	}
+
+	if (FAILED(InitIrradianceShadersAndInputLayout()))
+	{
+		return E_FAIL;
+	}
+
 	if (FAILED(InitDeferredLightingShaders()))
 	{
 		return E_FAIL;
@@ -1639,9 +1798,65 @@ void BlackJawz::Rendering::Render::GBufferPass(BlackJawz::System::TransformSyste
 	EndGBufferPass();
 }
 
+void BlackJawz::Rendering::Render::PreComputeBRDFLUT()
+{
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = 512.0f;
+	viewport.Height = 512.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	pImmediateContext.Get()->RSSetViewports(1, &viewport);
+
+	pImmediateContext.Get()->ClearRenderTargetView(pBRDFLUTRenderTargetView.Get(), Colors::Black);
+	pImmediateContext.Get()->OMSetRenderTargets(1, pBRDFLUTRenderTargetView.GetAddressOf(), nullptr);
+
+	pImmediateContext.Get()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	UINT stride = sizeof(VertexQuad);
+	UINT offset = 0;
+	pImmediateContext.Get()->IASetVertexBuffers(0, 1, pDeferredQuadVB.GetAddressOf(), &stride, &offset);
+	pImmediateContext.Get()->IASetIndexBuffer(pDeferredQuadIB.Get(), DXGI_FORMAT_R16_UINT, 0);
+	pImmediateContext.Get()->IASetInputLayout(pBRDFLUTInputLayout.Get());
+
+	pImmediateContext.Get()->VSSetShader(pBRDFLUTVertexShader.Get(), nullptr, 0);
+	pImmediateContext.Get()->PSSetShader(pBRDFLUTPixelShader.Get(), nullptr, 0);
+
+	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
+
+
+	DirectX::ScratchImage image;
+	CaptureTexture(pID3D11Device.Get(), pImmediateContext.Get(), pBRDFLUTTexture.Get(), image);
+	DirectX::SaveToDDSFile(*image.GetImage(0, 0, 0), DirectX::DDS_FLAGS_NONE, L"Textures\\BRDF_LUT.dds");
+}
+
+void BlackJawz::Rendering::Render::PreComputeIrradiance()
+{
+
+}
+
+void BlackJawz::Rendering::Render::PreComputeRadiance()
+{
+
+}
+
 void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& lightSystem,
 	BlackJawz::System::TransformSystem& transformSystem)
 {
+	PreComputeBRDFLUT();
+	PreComputeIrradiance();
+	PreComputeRadiance();
+
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = renderWidth;
+	viewport.Height = renderHeight;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	pImmediateContext.Get()->RSSetViewports(1, &viewport);
+
 	lightSystem.Update();
 
 	// Bind Lighting Render Target
@@ -1723,6 +1938,7 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	pImmediateContext->PSSetShaderResources(4, 1, texSkyBox.GetAddressOf());
 	pImmediateContext->PSSetShaderResources(5, 1, texIrradianceMap.GetAddressOf());
 	pImmediateContext->PSSetShaderResources(6, 1, texRadianceMap.GetAddressOf());
+	pImmediateContext->PSSetShaderResources(7, 1, texBRDFLUTMap.GetAddressOf());
 
 	// Draw Fullscreen Quad
 	pImmediateContext.Get()->DrawIndexed(6, 0, 0);

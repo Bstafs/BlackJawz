@@ -111,12 +111,17 @@ namespace BlackJawz::Rendering
 
 		HRESULT InitRenderTargetViews();
 		HRESULT InitBackBuffer();
+		HRESULT InitBRDFLUTView();
+		HRESULT InitIrradianceView();
 		HRESULT InitLightingView();
 		HRESULT InitQuadView();
 
 		HRESULT InitViewPort();
 		HRESULT InitShadersAndInputLayout();
 		HRESULT InitGBufferShadersAndInputLayout();
+		HRESULT InitBRDFLUTShadersAndInputLayout();
+		HRESULT InitIrradianceShadersAndInputLayout();
+
 		HRESULT InitDeferredLightingShaders();
 		HRESULT InitPostProcessingShaders();
 		HRESULT InitSamplerState();
@@ -129,13 +134,18 @@ namespace BlackJawz::Rendering
 		HRESULT InitSphere();
 		HRESULT InitPlane();
 
-		// Deferred Shading
+		// Deferred Shading PBR with Radiance, Irradiance and BRDFLUT
 		HRESULT InitGBuffer();
 		HRESULT InitDeferredQuad();
 		void BeginGBufferPass();
 		void GBufferPass(BlackJawz::System::TransformSystem& transformSystem,
 			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem);
 		void EndGBufferPass();
+
+		void PreComputeBRDFLUT();
+		void PreComputeRadiance();
+		void PreComputeIrradiance();
+
 		void LightingPass(BlackJawz::System::LightSystem& lightSystem, BlackJawz::System::TransformSystem& transformSystem);
 		void QuadPass();
 
@@ -240,7 +250,24 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11ShaderResourceView> texSkyBox;
 		ComPtr<ID3D11ShaderResourceView> texRadianceMap;
 		ComPtr<ID3D11ShaderResourceView> texIrradianceMap;
+		ComPtr<ID3D11ShaderResourceView> texBRDFLUTMap;
 
-		ID3D11BlendState* blendState = nullptr;
+		// BRDFLUT
+		ComPtr<ID3D11VertexShader> pBRDFLUTVertexShader;
+		ComPtr<ID3D11PixelShader> pBRDFLUTPixelShader;
+		ComPtr<ID3D11InputLayout> pBRDFLUTInputLayout;
+
+		ComPtr<ID3D11Texture2D> pBRDFLUTTexture;
+		ComPtr<ID3D11RenderTargetView> pBRDFLUTRenderTargetView;
+		ComPtr<ID3D11ShaderResourceView> pBRDFLUTShaderResourceView;
+
+		// Irradiance
+		ComPtr<ID3D11VertexShader> pIrradianceVertexShader;
+		ComPtr<ID3D11PixelShader> pIrradiancePixelShader;
+		ComPtr<ID3D11InputLayout> pIrradianceInputLayout;
+
+		ComPtr<ID3D11Texture2D> pIrradianceTexture;
+		ComPtr<ID3D11RenderTargetView> pIrradianceRenderTargetView;
+		ComPtr<ID3D11ShaderResourceView> pIrradianceShaderResourceView;
 	};
 }

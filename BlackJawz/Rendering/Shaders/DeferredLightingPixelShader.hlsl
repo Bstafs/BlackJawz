@@ -1,18 +1,18 @@
 SamplerState samLinear : register(s0);
 SamplerState samCube : register(s1);
 
-Texture2D gAlbedo : register(t0); // RT0: RGB = Albedo, A = AO (optional)
-Texture2D gNormal : register(t1); // RT1: World-space normal
-Texture2D gMetalRoughAO : register(t2); // RT2: R = Metalness, G = Roughness, B = AO
-Texture2D gPosition : register(t3); // RT3: World-space position
+Texture2D gAlbedo : register(t0);
+Texture2D gNormal : register(t1);
+Texture2D gMetalRoughAO : register(t2);
+Texture2D gPosition : register(t3);
 
-TextureCube SkyBox : register(t4);
-TextureCube IrradianceMap : register(t5);
-TextureCube preFilteredEnvMap : register(t6);
+TextureCube textureSkyBox : register(t4);
+TextureCube textureIrradianceMap : register(t5);
+TextureCube texturepreFilteredEnvMap : register(t6);
+Texture2D textureBRDFLUT : register(t7);
 
 #define MAX_LIGHTS 10
-
-static const float PI = 3.14159265;
+#define PI 3.14159265359
 
 struct LightProperties
 {
@@ -20,17 +20,13 @@ struct LightProperties
     float4 DiffuseLight;
     float4 AmbientLight;
     float4 SpecularLight;
-
     float SpecularPower;
     float Range;
     float2 Padding01;
-
     float3 LightDirection;
     float Intensity;
-
     float3 Attenuation;
     float Padding02;
-
     float SpotInnerCone;
     float SpotOuterCone;
     int LightType;
@@ -40,10 +36,9 @@ struct LightProperties
 cbuffer LightsBuffer : register(b0)
 {
     LightProperties lights[MAX_LIGHTS];
-    
     int numLights;
     float3 CameraPosition;
-}
+};
 
 static const int LIGHT_TYPE_POINT = 0;
 static const int LIGHT_TYPE_DIRECTIONAL = 1;
@@ -69,138 +64,135 @@ PSInput VS(VSInput input)
     return output;
 }
 
-// Normal Distribution function 
 float D_GGX(float dotNH, float roughness)
 {
     float alpha = roughness * roughness;
     float alpha2 = alpha * alpha;
     float denom = dotNH * dotNH * (alpha2 - 1.0) + 1.0;
-    return (alpha2) / (PI * denom * denom);
+    return alpha2 / (PI * denom * denom);
 }
 
-// Geometric Shadowing function 
 float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 {
-    float r = (roughness + 1.0);
+    float r = roughness + 1.0;
     float k = (r * r) / 8.0;
     float GL = dotNL / (dotNL * (1.0 - k) + k);
     float GV = dotNV / (dotNV * (1.0 - k) + k);
     return GL * GV;
 }
 
-// Fresnel function 
-float3 F_Schlick(float cosTheta, float3 albedo, float metallic)
+float3 F_SchlickR(float cosTheta, float3 F0, float roughness)
 {
-    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic); // * material.specular
-    float3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-    return F;
+    return F0 + (max((1.0 - roughness).xxx, F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 prefilteredReflection(float3 R, float roughness)
+{
+    const float MAX_REFLECTION_LOD = 9.0;
+    float lod = roughness * MAX_REFLECTION_LOD;
+    return texturepreFilteredEnvMap.SampleLevel(samCube, R, lod).rgb;
 }
 
 float4 PS(PSInput input) : SV_TARGET
 {
-    // --- Sample the G-buffer ---
-    // Albedo (from RT0)
+    // Sample G-buffer
     float3 albedo = gAlbedo.Sample(samLinear, input.TexC).rgb;
-        
-    // World-space normal (RT1)
     float3 N = normalize(gNormal.Sample(samLinear, input.TexC).rgb);
-    
-    // World-space position (RT3)
     float3 pos = gPosition.Sample(samLinear, input.TexC).rgb;
-    
-    // Material properties from RT2
     float3 metalRoughAO = gMetalRoughAO.Sample(samLinear, input.TexC).rgb;
+    
     float metallic = metalRoughAO.r;
     float roughness = saturate(metalRoughAO.g);
     float ao = metalRoughAO.b;
     
-    // --- PBR Base Reflectivity ---
-    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
-    
-    // Camera (view) vector
     float3 V = normalize(CameraPosition - pos);
+    float3 R = reflect(-V, N);
+    float NdotV = max(dot(N, V), 0.0);
     
-    // Accumulated outgoing radiance
-    float3 Lo = float3(0, 0, 0);
-     
-    // --- Lighting Loop ---
+    // Base reflectivity
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
+    float3 Lo = float3(0.0, 0.0, 0.0);
+
+    // Direct lighting
     for (int i = 0; i < numLights; ++i)
     {
         LightProperties light = lights[i];
-        float3 L = float3(0,0,0);
+        float3 L = 0.0;
         float attenuation = 1.0;
-        float3 fragToLight = 0;
-        float dist = 0.0;
-        
-        // Determine light direction and attenuation based on light type
+        float3 radiance = light.DiffuseLight.rgb * light.Intensity;
+
+        // Light direction calculation
         if (light.LightType == LIGHT_TYPE_POINT)
         {
-            fragToLight = light.LightPosition.xyz - pos;
-            dist = length(fragToLight);
+            float3 fragToLight = light.LightPosition.xyz - pos;
+            float dist = length(fragToLight);
             if (dist > light.Range)
                 continue;
-            L = fragToLight / dist;
-            float rangeFactor = saturate(1.0 - (dist / light.Range));
-            attenuation = rangeFactor / max(1.0 + light.Attenuation.x * dist + light.Attenuation.y * (dist * dist), 0.001);
+            
+            L = normalize(fragToLight);
+            float rangeFactor = saturate(1.0 - dist / light.Range);
+            attenuation = rangeFactor / (1.0 + light.Attenuation.x * dist +
+                        light.Attenuation.y * dist * dist);
         }
         else if (light.LightType == LIGHT_TYPE_DIRECTIONAL)
         {
             L = normalize(-light.LightDirection);
-            attenuation = 1.0;
         }
         else if (light.LightType == LIGHT_TYPE_SPOT)
         {
-            fragToLight = light.LightPosition.xyz - pos;
-            dist = length(fragToLight);
+            float3 fragToLight = light.LightPosition.xyz - pos;
+            float dist = length(fragToLight);
             if (dist > light.Range)
                 continue;
-            L = fragToLight / dist;
-            float theta = dot(normalize(-light.LightDirection), -L);
+            
+            L = normalize(fragToLight);
+            float theta = dot(L, normalize(-light.LightDirection));
             float epsilon = light.SpotInnerCone - light.SpotOuterCone;
-            float spotFactor = clamp((theta - light.SpotOuterCone) / epsilon, 0.0, 1.0);
-            float rangeFactor = saturate(1.0 - (dist / light.Range));
-            attenuation = rangeFactor / max(1.0 + light.Attenuation.x * dist + light.Attenuation.y * (dist * dist), 0.001);
+            float spotIntensity = clamp((theta - light.SpotOuterCone) / epsilon, 0.0, 1.0);
+            float rangeFactor = saturate(1.0 - dist / light.Range);
+            attenuation = spotIntensity * rangeFactor / (1.0 +
+                        light.Attenuation.x * dist +
+                        light.Attenuation.y * dist * dist);
         }
-        
-        // Half vector
-        float3 H = normalize(V + L);
-        
-        // Dot products
-        float NdotL = max(dot(N, L), 0.0);
-        float NdotV = max(dot(N, V), 0.0);
-        float NdotH = max(dot(N, H), 0.0);
-        float VdotH = max(dot(V, H), 0.0);
-        
-        // --- Microfacet BRDF (Specular) ---
 
-        // GGX Normal Distribution Function
-        float D = D_GGX(NdotH, roughness);
-        
-        // Geometry function (Schlick-GGX approximation)
-        float G = G_SchlicksmithGGX(NdotL, NdotV, roughness);
-        
-        // Fresnel using Schlick's approximation
-        float3 F = F_Schlick(VdotH, albedo, metallic);
-        
-        // Final specular term
-        float3 specular = D * F * G / max(4.0 * NdotL * NdotV, 0.001);
-        
-        // --- Diffuse term ---
-        float3 kD = (1.0 - F) * (1.0 - metallic);
-        float3 diffuse = kD * albedo / PI;
-        
-        // Light radiance 
-        float3 radiance = light.DiffuseLight.rgb * attenuation * light.Intensity;
-        
-        // Accumulate contribution (scaled by the cosine term)
-        Lo += (diffuse + specular) * radiance * NdotL;               
+        float3 H = normalize(V + L);
+        float NdotL = max(dot(N, L), 0.0);
+        float NdotH = max(dot(N, H), 0.0);
+        float HdotV = max(dot(H, V), 0.0);
+
+        if (NdotL > 0.0)
+        {
+            // Cook-Torrance BRDF
+            float D = D_GGX(NdotH, roughness);
+            float G = G_SchlicksmithGGX(NdotL, NdotV, roughness);
+            float3 F = F_SchlickR(HdotV, F0, roughness);
+
+            float3 kD = (1.0 - F) * (1.0 - metallic);
+            float3 diffuse = (albedo / PI) * kD * radiance * NdotL;
+
+            float denominator = 4.0 * NdotV * NdotL + 0.0001;
+            float3 specular = (D * G * F) / denominator * radiance * NdotL;
+
+            Lo += (diffuse + specular) * attenuation;
+        }
     }
+
+    // Ambient IBL
+    float3 F_ibl = F_SchlickR(NdotV, F0, roughness);
+    float3 kD_ibl = (1.0 - F_ibl) * (1.0 - metallic);
     
-    // --- Ambient Term ---
-    // A simple ambient contribution
-    float3 ambient = albedo * ao;
+    // Diffuse IBL
+    float3 irradiance = textureIrradianceMap.Sample(samCube, N).rgb;
+    float3 diffuseIBL = irradiance * albedo * kD_ibl * ao;
     
-    float3 color = ambient + Lo;   
+    // Specular IBL
+    float2 brdf = textureBRDFLUT.Sample(samLinear, float2(NdotV, roughness)).rg;
+    float3 prefiltered = prefilteredReflection(R, roughness);
+    float3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y) * ao;
     
+    // Combine
+    float3 ambient = (diffuseIBL + specularIBL);
+    float3 color = ambient + Lo;
+
     return float4(color, 1.0);
 }

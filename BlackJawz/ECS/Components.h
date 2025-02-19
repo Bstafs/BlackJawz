@@ -100,6 +100,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 		bool HasTextureNormal()
 		{
@@ -107,6 +108,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 		bool HasTextureMetal()
 		{
@@ -114,6 +116,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 		bool HasTextureRoughness()
 		{
@@ -121,6 +124,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 		bool HasTextureAO()
 		{
@@ -128,6 +132,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 		bool HasTextureDisplacement()
 		{
@@ -135,6 +140,7 @@ namespace BlackJawz::Component
 			{
 				return true;
 			}
+			return false;
 		}
 
 		ComPtr<ID3D11ShaderResourceView> textureDataDiffuse;

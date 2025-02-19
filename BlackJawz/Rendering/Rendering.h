@@ -113,6 +113,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitBackBuffer();
 		HRESULT InitBRDFLUTView();
 		HRESULT InitIrradianceView();
+		HRESULT InitRadianceView();
 		HRESULT InitLightingView();
 		HRESULT InitQuadView();
 
@@ -121,6 +122,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitGBufferShadersAndInputLayout();
 		HRESULT InitBRDFLUTShadersAndInputLayout();
 		HRESULT InitIrradianceShadersAndInputLayout();
+		HRESULT InitRadianceShadersAndInputLayout();
 
 		HRESULT InitDeferredLightingShaders();
 		HRESULT InitPostProcessingShaders();
@@ -269,5 +271,15 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11Texture2D> pIrradianceTexture;
 		ComPtr<ID3D11RenderTargetView> pIrradianceRenderTargetView;
 		ComPtr<ID3D11ShaderResourceView> pIrradianceShaderResourceView;
+
+		// Radiance
+		ComPtr<ID3D11VertexShader> pRadianceVertexShader;
+		ComPtr<ID3D11PixelShader> pRadiancePixelShader;
+		ComPtr<ID3D11InputLayout> pRadianceInputLayout;
+
+		ComPtr<ID3D11Texture2D> pRadianceTexture;
+		ComPtr<ID3D11RenderTargetView> pRadianceRenderTargetView;
+		ComPtr<ID3D11ShaderResourceView> pRadianceShaderResourceView;
+
 	};
 }

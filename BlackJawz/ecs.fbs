@@ -18,6 +18,10 @@ table Geometry {
 table Texture {
   dds_data_diffuse: [ubyte];  
   dds_data_normal: [ubyte];  
+  dds_data_metal: [ubyte];  
+  dds_data_roughness: [ubyte];
+  dds_data_ao: [ubyte];
+  dds_data_displacement: [ubyte];      
 }
 
 table Appearance {

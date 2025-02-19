@@ -11,8 +11,8 @@ BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 	);
 
 	cameraPitch = 0.0f;
-	cameraYaw = 0.0f;
-	cameraPosition = XMFLOAT3(0.0f, 0.0f, -5.0f);
+	cameraYaw = 3.140f;
+	cameraPosition = XMFLOAT3(0.0f, 0.0f, 5.0f);
 
 	transformSystem = systemManager.RegisterSystem<BlackJawz::System::TransformSystem>(transformArray);
 	appearanceSystem = systemManager.RegisterSystem<BlackJawz::System::AppearanceSystem>(appearanceArray);
@@ -242,14 +242,58 @@ void BlackJawz::Editor::Editor::SaveScene(const std::string& filename, Rendering
 					indexBufferVec
 				);
 			}
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecDiffuse;
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecNormal;
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecMetal;
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecRoughness;
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecAO;
+			flatbuffers::Offset<flatbuffers::Vector<uint8_t>> textureVecDisplacement;
 
-			auto textureDataDiffuse = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureDiffuse().Get());
-			auto textureVecDiffuse = builder.CreateVector(textureDataDiffuse);
+			if (appearanceComp.HasTextureDiffuse())
+			{
+				auto textureDataDiffuse = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureDiffuse().Get());
+				 textureVecDiffuse = builder.CreateVector(textureDataDiffuse);
+			}
 
-			auto textureDataNormal = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(), appearanceComp.GetTextureNormal().Get());
-			auto textureVecNormal = builder.CreateVector(textureDataNormal);
+			if (appearanceComp.HasTextureNormal())
+			{
+				auto textureDataNormal = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureNormal().Get());
+				 textureVecNormal = builder.CreateVector(textureDataNormal);
+			}
+	
+			if (appearanceComp.HasTextureMetal())
+			{
+				auto textureDataMetal = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureMetal().Get());
+				 textureVecMetal = builder.CreateVector(textureDataMetal);
+			}
 
-			auto textureOffset = ECS::CreateTexture(builder, textureVecDiffuse, textureVecNormal);
+			if (appearanceComp.HasTextureRoughness())
+			{
+				auto textureDataRoughness = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureRoughness().Get());
+				 textureVecRoughness = builder.CreateVector(textureDataRoughness);
+			}
+
+			if (appearanceComp.HasTextureAO())
+			{
+				auto textureDataAO = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureAO().Get());
+				 textureVecAO = builder.CreateVector(textureDataAO);
+			}
+
+			if (appearanceComp.HasTextureDisplacement())
+			{
+
+				auto textureDataDisplacement = ExtractTextureData(renderer.GetDevice(), renderer.GetDeviceContext(),
+					appearanceComp.GetTextureDisplacement().Get());
+				 textureVecDisplacement = builder.CreateVector(textureDataDisplacement);
+			}
+
+			auto textureOffset = ECS::CreateTexture(builder, textureVecDiffuse, textureVecNormal, textureVecMetal, 
+				textureVecRoughness, textureVecAO, textureVecDisplacement);
 
 			appearanceOffset = ECS::CreateAppearance(builder, geometryOffset, textureOffset);
 		}
@@ -496,14 +540,52 @@ void BlackJawz::Editor::Editor::LoadScene(const std::string& filename, Rendering
 			auto textureData = entityData->appearance()->texture();
 
 			// Convert FlatBuffer vector to a standard vector
-			std::vector<uint8_t> textureBufferDataDiffuse(textureData->dds_data_diffuse()->begin(), textureData->dds_data_diffuse()->end());
-			std::vector<uint8_t> textureBufferDataNormal(textureData->dds_data_normal()->begin(), textureData->dds_data_normal()->end());
+			ComPtr<ID3D11ShaderResourceView> textureSRVDiffuse = nullptr;
+			ComPtr<ID3D11ShaderResourceView> textureSRVNormal = nullptr;
+			ComPtr<ID3D11ShaderResourceView>textureSRVMetal = nullptr;
+			ComPtr<ID3D11ShaderResourceView> textureSRVRoughness = nullptr;
+			ComPtr<ID3D11ShaderResourceView> textureSRVAO = nullptr;
+			ComPtr<ID3D11ShaderResourceView> textureSRVDisplacement = nullptr;
 
-			ComPtr<ID3D11ShaderResourceView> textureSRVDiffuse = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataDiffuse);
-			ComPtr<ID3D11ShaderResourceView> textureSRVNormal = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataNormal);
+			if (textureData->dds_data_diffuse())
+			{
+				std::vector<uint8_t> textureBufferDataDiffuse(textureData->dds_data_diffuse()->begin(), textureData->dds_data_diffuse()->end());
+				textureSRVDiffuse = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataDiffuse);
+			}
 
+			if (textureData->dds_data_normal())
+			{
+				std::vector<uint8_t> textureBufferDataNormal(textureData->dds_data_normal()->begin(), textureData->dds_data_normal()->end());
+				textureSRVNormal = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataNormal);
+			}
+
+			if (textureData->dds_data_metal())
+			{
+				std::vector<uint8_t> textureBufferDataMetal(textureData->dds_data_metal()->begin(), textureData->dds_data_metal()->end());
+				textureSRVMetal = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataMetal);
+			}
+			
+			if (textureData->dds_data_roughness())
+			{
+				std::vector<uint8_t> textureBufferDataRoughness(textureData->dds_data_roughness()->begin(), textureData->dds_data_roughness()->end());
+				textureSRVRoughness = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataRoughness);
+			}
+
+			if (textureData->dds_data_ao())
+			{
+				std::vector<uint8_t> textureBufferDataAO(textureData->dds_data_ao()->begin(), textureData->dds_data_ao()->end());
+				textureSRVAO = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataAO);
+			}
+
+			if (textureData->dds_data_displacement())
+			{
+				std::vector<uint8_t> textureBufferDataDisplacement(textureData->dds_data_displacement()->begin(), textureData->dds_data_displacement()->end());
+				textureSRVDisplacement = LoadTextureFromDDSData(renderer.GetDevice(), textureBufferDataDisplacement);
+			}
+			
 			// Save geometry data and buffers in appearance
-			BlackJawz::Component::Appearance appearance(geometry, textureSRVDiffuse.Get(), textureSRVNormal.Get());
+			BlackJawz::Component::Appearance appearance(geometry, textureSRVDiffuse.Get(), textureSRVNormal.Get(),
+				textureSRVMetal.Get(), textureSRVRoughness.Get(), textureSRVAO.Get(), textureSRVDisplacement.Get());
 
 			appearanceArray.InsertData(newEntity, appearance);
 
@@ -997,8 +1079,7 @@ void BlackJawz::Editor::Editor::Hierarchy(Rendering::Render& renderer)
 			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\metal_metalness.dds", nullptr, texMetal.GetAddressOf());
 			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\metal_roughness.dds", nullptr, texRough.GetAddressOf());
 			CreateDDSTextureFromFile(renderer.GetDevice(), L"Textures\\metal_displacement.dds", nullptr, texDisplacement.GetAddressOf());
-
-
+			
 			BlackJawz::Component::Appearance appearance(sphereGeo, texDiffuse.Get(), texNormal.Get(), texMetal.Get(), 
 				texRough.Get(), texAO.Get(), texDisplacement.Get());
 			appearanceArray.InsertData(newEntity, appearance);
@@ -1141,19 +1222,34 @@ void BlackJawz::Editor::Editor::ObjectProperties()
 			ImGui::DragInt("Offset", &offset, 0.1f);
 
 			if (appearance->HasTextureDiffuse())
-			{			
+			{		
 				ImGui::Text("Diffuse Map:");
-				ImGui::SameLine(115);
-				ImGui::Text("Normal Map:");
-
-				// Here we assume a size of 100x100 pixels, adjust as needed.
 				ImGui::Image((ImTextureID)appearance->GetTextureDiffuse().Get(), ImVec2(100, 100));
-
-				if (appearance->HasTextureNormal())
-				{
-					ImGui::SameLine();
-					ImGui::Image((ImTextureID)appearance->GetTextureNormal().Get(), ImVec2(100, 100));
-				}
+			}
+			if (appearance->HasTextureNormal())
+			{
+				ImGui::Text("Normal Map:");
+				ImGui::Image((ImTextureID)appearance->GetTextureNormal().Get(), ImVec2(100, 100));
+			}
+			if (appearance->HasTextureMetal())
+			{
+				ImGui::Text("Metallic Map:");
+				ImGui::Image((ImTextureID)appearance->GetTextureMetal().Get(), ImVec2(100, 100));
+			}
+			if (appearance->HasTextureRoughness())
+			{
+				ImGui::Text("Roughness Map:");
+				ImGui::Image((ImTextureID)appearance->GetTextureRoughness().Get(), ImVec2(100, 100));
+			}
+			if (appearance->HasTextureAO())
+			{
+				ImGui::Text("Ambient Occlusion Map:");
+				ImGui::Image((ImTextureID)appearance->GetTextureAO().Get(), ImVec2(100, 100));
+			}
+			if (appearance->GetTextureDisplacement())
+			{
+				ImGui::Text("Displacement Map:");
+				ImGui::Image((ImTextureID)appearance->GetTextureDisplacement().Get(), ImVec2(100, 100));
 			}
 		}
 

@@ -267,7 +267,11 @@ struct Texture FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef TextureBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DDS_DATA_DIFFUSE = 4,
-    VT_DDS_DATA_NORMAL = 6
+    VT_DDS_DATA_NORMAL = 6,
+    VT_DDS_DATA_METAL = 8,
+    VT_DDS_DATA_ROUGHNESS = 10,
+    VT_DDS_DATA_AO = 12,
+    VT_DDS_DATA_DISPLACEMENT = 14
   };
   const ::flatbuffers::Vector<uint8_t> *dds_data_diffuse() const {
     return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_DIFFUSE);
@@ -275,12 +279,32 @@ struct Texture FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<uint8_t> *dds_data_normal() const {
     return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_NORMAL);
   }
+  const ::flatbuffers::Vector<uint8_t> *dds_data_metal() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_METAL);
+  }
+  const ::flatbuffers::Vector<uint8_t> *dds_data_roughness() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_ROUGHNESS);
+  }
+  const ::flatbuffers::Vector<uint8_t> *dds_data_ao() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_AO);
+  }
+  const ::flatbuffers::Vector<uint8_t> *dds_data_displacement() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_DDS_DATA_DISPLACEMENT);
+  }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_DDS_DATA_DIFFUSE) &&
            verifier.VerifyVector(dds_data_diffuse()) &&
            VerifyOffset(verifier, VT_DDS_DATA_NORMAL) &&
            verifier.VerifyVector(dds_data_normal()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_METAL) &&
+           verifier.VerifyVector(dds_data_metal()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_ROUGHNESS) &&
+           verifier.VerifyVector(dds_data_roughness()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_AO) &&
+           verifier.VerifyVector(dds_data_ao()) &&
+           VerifyOffset(verifier, VT_DDS_DATA_DISPLACEMENT) &&
+           verifier.VerifyVector(dds_data_displacement()) &&
            verifier.EndTable();
   }
 };
@@ -294,6 +318,18 @@ struct TextureBuilder {
   }
   void add_dds_data_normal(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_normal) {
     fbb_.AddOffset(Texture::VT_DDS_DATA_NORMAL, dds_data_normal);
+  }
+  void add_dds_data_metal(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_metal) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_METAL, dds_data_metal);
+  }
+  void add_dds_data_roughness(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_roughness) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_ROUGHNESS, dds_data_roughness);
+  }
+  void add_dds_data_ao(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_ao) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_AO, dds_data_ao);
+  }
+  void add_dds_data_displacement(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_displacement) {
+    fbb_.AddOffset(Texture::VT_DDS_DATA_DISPLACEMENT, dds_data_displacement);
   }
   explicit TextureBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -309,8 +345,16 @@ struct TextureBuilder {
 inline ::flatbuffers::Offset<Texture> CreateTexture(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_diffuse = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_normal = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_normal = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_metal = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_roughness = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_ao = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> dds_data_displacement = 0) {
   TextureBuilder builder_(_fbb);
+  builder_.add_dds_data_displacement(dds_data_displacement);
+  builder_.add_dds_data_ao(dds_data_ao);
+  builder_.add_dds_data_roughness(dds_data_roughness);
+  builder_.add_dds_data_metal(dds_data_metal);
   builder_.add_dds_data_normal(dds_data_normal);
   builder_.add_dds_data_diffuse(dds_data_diffuse);
   return builder_.Finish();
@@ -319,13 +363,25 @@ inline ::flatbuffers::Offset<Texture> CreateTexture(
 inline ::flatbuffers::Offset<Texture> CreateTextureDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<uint8_t> *dds_data_diffuse = nullptr,
-    const std::vector<uint8_t> *dds_data_normal = nullptr) {
+    const std::vector<uint8_t> *dds_data_normal = nullptr,
+    const std::vector<uint8_t> *dds_data_metal = nullptr,
+    const std::vector<uint8_t> *dds_data_roughness = nullptr,
+    const std::vector<uint8_t> *dds_data_ao = nullptr,
+    const std::vector<uint8_t> *dds_data_displacement = nullptr) {
   auto dds_data_diffuse__ = dds_data_diffuse ? _fbb.CreateVector<uint8_t>(*dds_data_diffuse) : 0;
   auto dds_data_normal__ = dds_data_normal ? _fbb.CreateVector<uint8_t>(*dds_data_normal) : 0;
+  auto dds_data_metal__ = dds_data_metal ? _fbb.CreateVector<uint8_t>(*dds_data_metal) : 0;
+  auto dds_data_roughness__ = dds_data_roughness ? _fbb.CreateVector<uint8_t>(*dds_data_roughness) : 0;
+  auto dds_data_ao__ = dds_data_ao ? _fbb.CreateVector<uint8_t>(*dds_data_ao) : 0;
+  auto dds_data_displacement__ = dds_data_displacement ? _fbb.CreateVector<uint8_t>(*dds_data_displacement) : 0;
   return ECS::CreateTexture(
       _fbb,
       dds_data_diffuse__,
-      dds_data_normal__);
+      dds_data_normal__,
+      dds_data_metal__,
+      dds_data_roughness__,
+      dds_data_ao__,
+      dds_data_displacement__);
 }
 
 struct Appearance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

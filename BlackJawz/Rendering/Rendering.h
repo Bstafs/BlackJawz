@@ -25,6 +25,11 @@ struct VertexQuad
 	XMFLOAT2 TexC;
 };
 
+struct SkyboxVertex
+{
+	XMFLOAT3 Position;
+};
+
 struct LightProperties
 {
 	XMFLOAT4 LightPosition;
@@ -90,8 +95,10 @@ namespace BlackJawz::Rendering
 			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem); // Render scene to the texture
 		ID3D11ShaderResourceView* GetShaderResourceView() const { return  pQuadRenderShaderResourceView.Get(); } // For ImGui::Image
 		void ResizeRenderTarget(int width, int height);
+		void ResizeBackBuffer();
 		void ResizeGBuffer();
 		void ResizeDepthStencilBuffer();
+		void ResizeSkyBox();
 
 		void SetViewMatrix(XMFLOAT4X4 viewmatrix) { viewMatrix = viewmatrix; }
 		void SetProjectionMatrix(XMFLOAT4X4 projMatrix) { projectionMatrix = projMatrix; }
@@ -115,6 +122,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitIrradianceView();
 		HRESULT InitRadianceView();
 		HRESULT InitLightingView();
+		HRESULT InitSkyboxView();
 		HRESULT InitQuadView();
 
 		HRESULT InitViewPort();
@@ -125,6 +133,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitRadianceShadersAndInputLayout();
 
 		HRESULT InitDeferredLightingShaders();
+		HRESULT InitSkyBoxShadersAndInputLayout();
 		HRESULT InitPostProcessingShaders();
 		HRESULT InitSamplerState();
 		HRESULT InitShaderMapping();
@@ -135,6 +144,7 @@ namespace BlackJawz::Rendering
 		HRESULT InitCube();
 		HRESULT InitSphere();
 		HRESULT InitPlane();
+		HRESULT InitSkyBox();
 
 		// Deferred Shading PBR with Radiance, Irradiance and BRDFLUT
 		HRESULT InitGBuffer();
@@ -143,12 +153,11 @@ namespace BlackJawz::Rendering
 		void GBufferPass(BlackJawz::System::TransformSystem& transformSystem,
 			BlackJawz::System::AppearanceSystem& appearanceSystem, BlackJawz::System::LightSystem& lightSystem);
 		void EndGBufferPass();
-
 		void PreComputeBRDFLUT();
 		void PreComputeRadiance();
 		void PreComputeIrradiance();
-
 		void LightingPass(BlackJawz::System::LightSystem& lightSystem, BlackJawz::System::TransformSystem& transformSystem);
+		void SkyBox();
 		void QuadPass();
 
 	private:
@@ -181,11 +190,14 @@ namespace BlackJawz::Rendering
 		// Depth Buffer
 		ComPtr<ID3D11DepthStencilView> pDepthStencilView;
 		ComPtr<ID3D11Texture2D> pDepthStencilBuffer;
+		ComPtr<ID3D11ShaderResourceView> pDepthStencilShaderResourceView;
 
+		ComPtr<ID3D11DepthStencilState> DSLess;
 		ComPtr<ID3D11DepthStencilState> DSLessEqual;
 		ComPtr<ID3D11RasterizerState> RSCullNone;
 		ComPtr<ID3D11RasterizerState> CCWcullMode;
 		ComPtr<ID3D11RasterizerState> CWcullMode;
+		ComPtr<ID3D11RasterizerState> CWcullModeFront;
 
 		int renderWidth = BlackJawz::Application::Application::GetWindowWidth();
 		int renderHeight = BlackJawz::Application::Application::GetWindowHeight();
@@ -281,5 +293,18 @@ namespace BlackJawz::Rendering
 		ComPtr<ID3D11RenderTargetView> pRadianceRenderTargetView;
 		ComPtr<ID3D11ShaderResourceView> pRadianceShaderResourceView;
 
+		// Skybox
+		ComPtr<ID3D11VertexShader> pSkyboxVertexShader;
+		ComPtr<ID3D11PixelShader> pSkyboxPixelShader;
+		ComPtr<ID3D11InputLayout> pSkyboxInputLayout;
+
+		ComPtr<ID3D11Texture2D> pSkyboxTexture;
+		ComPtr<ID3D11RenderTargetView> pSkyboxRenderTargetView;
+		ComPtr<ID3D11ShaderResourceView> pSkyboxShaderResourceView;
+
+		ComPtr<ID3D11Buffer> pSkyboxVertexBuffer;
+		ComPtr<ID3D11Buffer> pSkyboxIndexBuffer;
+		std::vector<Vertex> skyboxVertices;
+		std::vector<uint32_t> skyboxIndices;
 	};
 }

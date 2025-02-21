@@ -199,5 +199,8 @@
     <FxCompile Include="Rendering\Shaders\Radiance.hlsl">
       <Filter>Rendering\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Rendering\Shaders\Skybox.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

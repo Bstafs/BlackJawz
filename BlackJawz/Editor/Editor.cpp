@@ -5,9 +5,9 @@ extern const std::filesystem::path filePath = std::filesystem::current_path();
 BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 {
 	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
-		45.0f,
+		90.0f,
 		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
-		0.001f, 10000.0f
+		2.0f, 500.0f
 	);
 
 	cameraPitch = 0.0f;

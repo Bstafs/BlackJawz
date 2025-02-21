@@ -120,7 +120,7 @@ float4 PS(PSInput input) : SV_TARGET
         float3 L = 0.0;
         float attenuation = 1.0;
         float3 radiance = light.DiffuseLight.rgb * light.Intensity;
-
+        
         // Light direction calculation
         if (light.LightType == LIGHT_TYPE_POINT)
         {
@@ -193,6 +193,6 @@ float4 PS(PSInput input) : SV_TARGET
     // Combine
     float3 ambient = (diffuseIBL + specularIBL);
     float3 color = ambient + Lo;
-
-    return float4(color, 1.0);
+    
+    return float4(color, 1.0f);
 }

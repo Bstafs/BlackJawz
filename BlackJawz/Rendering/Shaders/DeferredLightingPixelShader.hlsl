@@ -101,7 +101,7 @@ float4 PS(PSInput input) : SV_TARGET
     float3 pos = gPosition.Sample(samLinear, input.TexC).rgb;
     float3 metalRoughAO = gMetalRoughAO.Sample(samLinear, input.TexC).rgb;
     
-    float metallic = metalRoughAO.r;
+    float metallic = saturate(metalRoughAO.r);;
     float roughness = saturate(metalRoughAO.g);
     float ao = metalRoughAO.b;
     

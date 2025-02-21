@@ -1192,7 +1192,7 @@ HRESULT BlackJawz::Rendering::Render::InitShaderMapping()
 {
 	HRESULT hr = S_OK;
 
-	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\SkyBox.dds", nullptr, texSkyBox.GetAddressOf());
+	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\SkyBox8K.dds", nullptr, texSkyBox.GetAddressOf());
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\RadianceMap.dds", nullptr, texRadianceMap.GetAddressOf());
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\IrradianceMap.dds", nullptr, texIrradianceMap.GetAddressOf());
 	CreateDDSTextureFromFile(pID3D11Device.Get(), L"Textures\\BRDF_LUT.dds", nullptr, texBRDFLUTMap.GetAddressOf());

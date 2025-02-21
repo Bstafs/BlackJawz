@@ -31,17 +31,16 @@ PSInput VS(VSInput input)
 
 float4 PS(PSInput input) : SV_TARGET
 {
-    // Get the scene depth at this pixel.
+    // Get the scene depth at this pixel
     float sceneDepth = depthTexture.Sample(samLinear, input.TexC).r;
 
-    // Sample the deferred lighting result.
+    // Sample the deferred lighting result
     float3 sceneColor = lightingTexture.Sample(samLinear, input.TexC).rgb;
 
     // Sample the skybox.
     float3 skyColor = skyBoxTexture.Sample(samLinear, input.TexC).rgb;
     
     // Use skybox color where there is no geometry (depth is 1.0) 
-    // Otherwise, use the scene color.
     float3 finalColor = (sceneDepth >= 1.0f) ? skyColor : sceneColor;
     return float4(finalColor, 1.0);
 }

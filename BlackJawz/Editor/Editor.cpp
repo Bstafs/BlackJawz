@@ -7,7 +7,7 @@ BlackJawz::Editor::Editor::Editor() : currentPath(filePath)
 	editorCamera = std::make_unique<BlackJawz::EditorCamera::EditorCamera>(
 		90.0f,
 		BlackJawz::Application::Application::GetWindowWidth() / BlackJawz::Application::Application::GetWindowHeight(),
-		2.0f, 500.0f
+		0.1f, 500.0f
 	);
 
 	cameraPitch = 0.0f;

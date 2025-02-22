@@ -70,8 +70,12 @@ struct LightsBuffer
 
 struct PostProcessingBuffer
 {
-	XMFLOAT2 ScreenSize;
-	XMFLOAT2 Padding01;
+	XMFLOAT2 ScreenSize;   // Screen resolution (e.g., 1920x1080)
+	XMFLOAT2 RcpScreenSize; // 1.0 / ScreenSize (precomputed)
+	float ContrastThreshold; // Edge detection threshold (e.g., 0.0312)
+	float RelativeThreshold; // Relative threshold (e.g., 0.063)
+	float SubpixelBlending; // Subpixel blending strength (e.g., 0.75)
+	float Padding01;
 };
 
 namespace BlackJawz::Rendering

@@ -2460,6 +2460,11 @@ void BlackJawz::Rendering::Render::QuadPass()
 
 	PostProcessingBuffer cb = {};
 	cb.ScreenSize = XMFLOAT2(renderWidth, renderHeight);
+	cb.RcpScreenSize = XMFLOAT2(1.0f / renderWidth, 1.0f / renderHeight);
+	cb.ContrastThreshold = 0.0312f;
+	cb.RelativeThreshold = 0.063f;
+	cb.SubpixelBlending = 0.75f;
+
 	pImmediateContext.Get()->UpdateSubresource(pPostProcessingBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 	// Set Quad Shaders

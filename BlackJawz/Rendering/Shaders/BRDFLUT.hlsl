@@ -13,7 +13,7 @@ struct PSInput
 PSInput VS(VSInput input)
 {
     PSInput output;
-    output.Pos = float4(input.Pos * 2.0 - 1.0, 0.0, 1.0); // NDC
+    output.Pos = float4(input.Pos * 2.0 - 1.0, 0.5, 1.0);
     output.TexC = input.TexC;
     return output;
 }
@@ -39,7 +39,7 @@ float3 importanceSample_GGX(float2 Xi, float roughness, float3 N)
     float alpha = roughness * roughness;
     float phi = 2.0 * PI * Xi.x; // Remove random noise
     
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y));
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * max(Xi.y, 1e-5)));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
     
     // Spherical to Cartesian
@@ -51,16 +51,16 @@ float3 importanceSample_GGX(float2 Xi, float roughness, float3 N)
     
     // Tangent-to-world space (N is always [0,0,1] for BRDF LUT)
     float3 up = abs(N.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
-    float3 T = normalize(cross(up, N));
-    float3 B = cross(N, T);
+    float3 T = float3(1, 0, 0);
+    float3 B = float3(0, 1, 0);
     return normalize(T * H.x + B * H.y + N * H.z);
 }
 
 // Match geometry function with your main PBR shader
 float G_SchlickSmithGGX(float dotNL, float dotNV, float roughness)
 {
-    float r = roughness + 1.0;
-    float k = (r * r) / 8.0; // Align with main shader's G calculation
+    float alpha = roughness * roughness;
+    float k = alpha / 2.0;
     float GL = dotNL / (dotNL * (1.0 - k) + k);
     float GV = dotNV / (dotNV * (1.0 - k) + k);
     return GL * GV;
@@ -86,7 +86,7 @@ float2 BRDF(float NoV, float roughness)
         if (dotNL > 0)
         {
             float G = G_SchlickSmithGGX(dotNL, dotNV, roughness);
-            float G_Vis = (G * dotVH) / (dotNH * dotNV + 1e-5);
+            float G_Vis = (G * dotVH) / max(dotNH * dotNV, 1e-5);
             float Fc = pow(1.0 - dotVH, 5.0);
             lut += float2((1.0 - Fc) * G_Vis, Fc * G_Vis);
         }

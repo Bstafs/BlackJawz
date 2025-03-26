@@ -1,5 +1,27 @@
-SamplerState samLinear : register(s0);
-SamplerState samCube : register(s1);
+// Shared sampler for 2D textures (Albedo, Normal, MetalRoughAO, Position)
+SamplerState samLinearWrap : register(s0)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
+
+// Sampler for BRDFLUT (clamped, no mipmaps)
+SamplerState samLinearClamp : register(s1)
+{
+    Filter = MIN_MAG_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+    MaxLOD = 0; // Disable mipmapping
+};
+
+// Sampler for cube maps (SkyBox, Irradiance, PrefilteredEnv)
+SamplerState samCubeClamp : register(s2)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
 
 Texture2D gAlbedo : register(t0);
 Texture2D gNormal : register(t1);
@@ -90,18 +112,18 @@ float3 prefilteredReflection(float3 R, float roughness)
 {
     const float MAX_REFLECTION_LOD = 9.0;
     float lod = roughness * MAX_REFLECTION_LOD;
-    return texturepreFilteredEnvMap.SampleLevel(samCube, R, lod).rgb;
+    return texturepreFilteredEnvMap.SampleLevel(samCubeClamp, R, lod).rgb;
 }
 
 float4 PS(PSInput input) : SV_TARGET
 {
     // Sample G-buffer
-    float3 albedo = gAlbedo.Sample(samLinear, input.TexC).rgb;
-    float3 N = normalize(gNormal.Sample(samLinear, input.TexC).rgb);
-    float3 pos = gPosition.Sample(samLinear, input.TexC).rgb;
-    float3 metalRoughAO = gMetalRoughAO.Sample(samLinear, input.TexC).rgb;
+    float3 albedo = gAlbedo.Sample(samLinearWrap, input.TexC).rgb;
+    float3 N = normalize(gNormal.Sample(samLinearWrap, input.TexC).rgb);
+    float3 pos = gPosition.Sample(samLinearWrap, input.TexC).rgb;
+    float3 metalRoughAO = gMetalRoughAO.Sample(samLinearWrap, input.TexC).rgb;
     
-    float metallic = saturate(metalRoughAO.r);;
+    float metallic = saturate(metalRoughAO.r);
     float roughness = saturate(metalRoughAO.g);
     float ao = metalRoughAO.b;
     
@@ -182,11 +204,11 @@ float4 PS(PSInput input) : SV_TARGET
     float3 kD_ibl = (1.0 - F_ibl) * (1.0 - metallic);
     
     // Diffuse IBL
-    float3 irradiance = textureIrradianceMap.Sample(samCube, N).rgb;
+    float3 irradiance = textureIrradianceMap.Sample(samCubeClamp, N).rgb;
     float3 diffuseIBL = irradiance * albedo * kD_ibl * ao;
     
     // Specular IBL
-    float2 brdf = textureBRDFLUT.Sample(samLinear, float2(NdotV, roughness)).rg;
+    float2 brdf = textureBRDFLUT.Sample(samLinearClamp, float2(NdotV, roughness)).rg;
     float3 prefiltered = prefilteredReflection(R, roughness);
     float3 specularIBL = prefiltered * (F_ibl * brdf.x + brdf.y) * ao;
     

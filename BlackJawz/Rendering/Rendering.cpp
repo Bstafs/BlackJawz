@@ -2309,8 +2309,6 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	BlackJawz::System::TransformSystem& transformSystem)
 {
 	PreComputeBRDFLUT();
-	PreComputeIrradiance();
-	PreComputeRadiance();
 
 	D3D11_VIEWPORT viewport = {};
 	viewport.Width = renderWidth;
@@ -2386,7 +2384,8 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	pImmediateContext.Get()->PSSetShader(pDeferredLightingPixelShader.Get(), nullptr, 0);
 	pImmediateContext.Get()->PSSetConstantBuffers(0, 1, pLightsBuffer.GetAddressOf());
 	pImmediateContext.Get()->PSSetSamplers(0, 1, pSamplerLinear.GetAddressOf());
-	pImmediateContext.Get()->PSSetSamplers(1, 1, pSamplerCube.GetAddressOf());
+	pImmediateContext.Get()->PSSetSamplers(1, 1, pSamplerLinear.GetAddressOf());
+	pImmediateContext.Get()->PSSetSamplers(2, 1, pSamplerCube.GetAddressOf());
 
 	ID3D11ShaderResourceView* srvs[4] =
 	{

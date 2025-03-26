@@ -9,11 +9,9 @@ namespace BlackJawz::System
 	class TransformSystem : public System
 	{
 	private:
-		// Assuming transformArray is an instance of ComponentArray<Transform>
 		BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& transformArray;
 
 	public:
-		// Constructor where transformArray is passed in
 		TransformSystem(BlackJawz::Component::ComponentArray<BlackJawz::Component::Transform>& transformArray)
 			: transformArray(transformArray) {}
 
@@ -43,13 +41,11 @@ namespace BlackJawz::System
 			return transformArray.HasData(entity);
 		}
 
-		// You may want a method to add entities to this system when they have a Transform component
 		void AddEntity(BlackJawz::Entity::Entity entity)
 		{
 			entities.insert(entity);
 		}
 
-		// Optionally, a method to remove entities when they are destroyed or no longer have a Transform component
 		void RemoveEntity(BlackJawz::Entity::Entity entity)
 		{
 			entities.erase(entity);
@@ -127,17 +123,12 @@ namespace BlackJawz::System
 				auto& transform = transformArray.GetData(entity);
 
 				if (light.Type == BlackJawz::Component::LightType::Directional)
-				{
-					// Use direction only
-					light.Direction = transform.rotation; // Assuming rotation holds direction
+				{					
+					light.Direction = transform.rotation; 
 				}
 				else
 				{
-					// Use position from Transform for Point & Spot Lights
 					XMFLOAT3 lightPos = transform.position;
-
-					// Send to shader
-				//	shader.SetLightPosition(entity, lightPos);
 				}
 			}
 		}

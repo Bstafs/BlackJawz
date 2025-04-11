@@ -2406,7 +2406,6 @@ void BlackJawz::Rendering::Render::LightingPass(BlackJawz::System::LightSystem& 
 	pImmediateContext.Get()->DrawIndexed(6, 0, 0);
 }
 
-
 void BlackJawz::Rendering::Render::SkyBox()
 {
 	pImmediateContext.Get()->OMSetDepthStencilState(DSLessEqual.Get(), 0);

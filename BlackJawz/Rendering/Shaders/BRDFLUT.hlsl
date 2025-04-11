@@ -19,7 +19,7 @@ PSInput VS(VSInput input)
 }
 
 static const float PI = 3.14159265359;
-static const uint NUM_SAMPLES = 1024;
+static const uint NUM_SAMPLES = 512;
 
 // Proper Hammersley sequence for low-discrepancy sampling
 float2 hammersley2d(uint i, uint N)
@@ -56,11 +56,11 @@ float3 importanceSample_GGX(float2 Xi, float roughness, float3 N)
     return normalize(T * H.x + B * H.y + N * H.z);
 }
 
-// Match geometry function with your main PBR shader
+// Match geometry function with main PBR shader
 float G_SchlickSmithGGX(float dotNL, float dotNV, float roughness)
 {
-    float alpha = roughness * roughness;
-    float k = alpha / 2.0;
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
     float GL = dotNL / (dotNL * (1.0 - k) + k);
     float GV = dotNV / (dotNV * (1.0 - k) + k);
     return GL * GV;

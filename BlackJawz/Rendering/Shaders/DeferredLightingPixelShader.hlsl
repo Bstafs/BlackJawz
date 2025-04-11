@@ -86,6 +86,7 @@ PSInput VS(VSInput input)
     return output;
 }
 
+// Computes distribution of light depending on normals direction on a surface.
 float D_GGX(float dotNH, float roughness)
 {
     float alpha = roughness * roughness;
@@ -94,6 +95,7 @@ float D_GGX(float dotNH, float roughness)
     return alpha2 / (PI * denom * denom);
 }
 
+// Reflects light based on what part of the surface is exposed to the light and only reflects that light back.
 float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 {
     float r = roughness + 1.0;
@@ -103,6 +105,7 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
     return GL * GV;
 }
 
+// The amount of light reflected whenn hitting a surface. 
 float3 F_SchlickR(float cosTheta, float3 F0, float roughness)
 {
     return F0 + (max((1.0 - roughness).xxx, F0) - F0) * pow(1.0 - cosTheta, 5.0);
@@ -187,7 +190,7 @@ float4 PS(PSInput input) : SV_TARGET
             // Cook-Torrance BRDF
             float D = D_GGX(NdotH, roughness);
             float G = G_SchlicksmithGGX(NdotL, NdotV, roughness);
-            float3 F = F_SchlickR(HdotV, F0, roughness);
+            float3 F = F_SchlickR(HdotV, F0, roughness * roughness);
 
             float3 kD = (1.0 - F) * (1.0 - metallic);
             float3 diffuse = (albedo / PI) * kD * radiance * NdotL;

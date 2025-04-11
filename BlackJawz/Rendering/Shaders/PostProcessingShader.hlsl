@@ -120,6 +120,9 @@ float4 PS(PSInput input) : SV_TARGET
     float3 fxaa = FXAA(input.TexC);
     
     // Use skybox color where there is no geometry (depth is 1.0) 
+    // 1.0 = pixel is empty, render skybox color
+    // 0.0 = object exists in that pixel, use lighting result
+    
     float3 finalColor = (sceneDepth >= 1.0f) ? skyColor : sceneColor;
     return float4(finalColor, 1.0);
 }

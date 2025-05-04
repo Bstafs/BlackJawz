@@ -29,6 +29,9 @@
 #include <filesystem>
 #include <cstdint>
 #include <cstring>
+#include <thread>
+#include <mutex>
+#include <future>
 
 // Windows
 #include <windows.h>
